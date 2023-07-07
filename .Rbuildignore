@@ -6,3 +6,4 @@
 ^slides$
 ^posters$
 ^vignettes/som\.Rmd$
+^\.github$

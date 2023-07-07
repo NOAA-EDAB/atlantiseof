@@ -1,12 +1,12 @@
 Package: atlantiseof
-Title: What the Package Does (One Line, Title Case)
+Title: Explores Regional Ecosystem Overfishing Indices using Atlantis Ecosystem Model
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person(given = "Andy",family = "Beet", role = c("aut", "cre"),
+           email = "andrew.beet@noaa.gov",
+           comment = c(ORCID = "0000-0001-8270-7090"))
+Description: Using the the NEUS Atlantis Ecosystem model we explore regional ecosystem overfishing indices and compare to global estimates.
+License: file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
