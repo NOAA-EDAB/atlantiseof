@@ -10,3 +10,14 @@ License: file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
+Imports: 
+    dplyr,
+    ggplot2,
+    magrittr,
+    readr,
+    sf,
+    NEFSCspatial,
+    atlantisprocessing
+Remotes:
+    NEFSC/NEFSC-Spatial
+    NOAA-EDAB/atlantisprocessing
