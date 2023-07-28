@@ -1,21 +1,23 @@
 #' Read in the Phyto_Forcing_xxx.nc files to get estimates of PP
 #'
 #' Get primary production data from nc forcing files
+#' NEUS atlantis is forced with 3 primary producer species (Diatoms, Dinoflagellates,Picophytoplankton)
 #'
 #' @param bgm Path to bgm file
 #' @param pathToForcing Character sting. Path to location of forcing files
+#' @param convertNtoC Boolean. Convert Nitrogen (Atlantis units) to Carbon (Default = T)
 #'
 #' @return list of output
-#' \item{annual}{annual primary production}
-#' \item{daily}{daily primary production}
-#' \item{dailyspecies}{daily primary production}
-#' \item{dailybox}{daily primary production by box}
-#' \item{totalArea}{area domain}
+#' \item{dailyspeciesbox}{daily primary production by species and atlantis box (tons Nitrogen)}
+#' \item{dailyspecies}{daily primary production by species (tons Nitrogen)}
+#' \item{daily}{daily primary production (tons Nitrogen)}
+#' \item{annual}{annual primary production (tons Nitrogen) for all primary producers in NEUS}
+#' \item{totalArea}{area domain of NEUS model (km^2)}
 #'
 #'@export
 
 
-get_pp <- function(bgm,pathToForcing) {
+get_pp <- function(bgm, pathToForcing) {
 
   # read bgm file
   #(0,23-29 are boundary boxes) so omit them
@@ -30,15 +32,20 @@ get_pp <- function(bgm,pathToForcing) {
 
   totalArea <- sum(volume$area)/1e6 # m2 - > km2
 
+  # find areas of epus based on atlantis boxes
+  epuarea <- dplyr::left_join(neusbgm$boxes,NEFSCspatial::Neus_atlantis %>% sf::st_as_sf(),
+                   by = c(".bx0"="BOX_ID")) %>%
+    dplyr::filter(.bx0 %in% c(1:22)) %>%
+    dplyr::group_by(epu) %>%
+    dplyr::summarise(area = sum(area)/1e6)
 
   PPdata <- NULL
-  PPdata2 <- NULL
   for (avariable in c("Diatom_N","DinoFlag_N","PicoPhytopl_N")) {
     PPvar <- NULL
-    PPvar2 <- NULL
     for (iyr in 1964:2017) {
 
-      file <- here::here(paste0(pathToForcing,"/Phyto_Forcing_",iyr,".nc"))
+      #file <- here::here(paste0(pathToForcing,"/Phyto_Forcing_",iyr,".nc"))
+      file <- paste0(pathToForcing,"/Phyto_Forcing_",iyr,".nc")
 
       # open the file and pull the data
       dat <- ncdf4::nc_open(file)
@@ -65,65 +72,59 @@ get_pp <- function(bgm,pathToForcing) {
       boxns <- 2:23
       dailyboxN <- apply(var[,c(boxns),],c(2,3),sum,na.rm=T)
 
-      # PP over NEUS (aggregate over boxes)
+      # PP over NEUS
       # weight by box volume (tons N) day-1 (mg -> tons)
       dailyN <- colSums(dailyboxN * volume$m3) / 1e9
-      df <- data.frame(year = iyr,
-                       day = 1:length(dailyN),
-                       value = dailyN,
-                       var = avariable) %>%
-        dplyr::mutate(t = lubridate::date_decimal(year+day/length(dailyN))) %>%
-        tibble::as_tibble()
-
-      PPvar <- rbind(PPvar,df)
 
       # PP by box by day tons N day -1
       # daily N mg-1 day-1 * volume then convert to tons
-
       dailytotboxN <- as.data.frame(dailyboxN * volume$m3/1e9)
       rownames(dailytotboxN) <- boxns-1 # box
       colnames(dailytotboxN) <- 1:ndays # day
       dailytotboxN <- tibble::rownames_to_column(dailytotboxN)
       names(dailytotboxN)[1] <- "box"
-      df2 <- tidyr::pivot_longer(dailytotboxN,cols=-box,names_to = "day",values_to = "N") %>%
+      df <- tidyr::pivot_longer(dailytotboxN,cols=-box,names_to = "day",values_to = "value") %>%
         dplyr::mutate(year = iyr,
                       variable = avariable,
                       day = as.integer(day),
                       box = as.integer(box)) %>%
-        dplyr::relocate(year,day,box,variable,N)
-
-
-
-      # df2 <- data.frame(year = iyr,
-      #                  day = 1:length(dailyN),
-      #                  value = dailyN,
-      #                  var = avariable) %>%
-      #   dplyr::mutate(t = lubridate::date_decimal(year+day/length(dailyN))) %>%
-      #   tibble::as_tibble()
+        dplyr::mutate(t = lubridate::date_decimal(year+day/length(dailyN))) %>%
+        dplyr::relocate(year,day,box,variable,value)
 
       PPvar <- rbind(PPvar,df)
-      PPvar2 <- rbind(PPvar2,df2)
-    }
-    #PPvar$t <- 1:19724
+    } # year loop
+
+    # PPdata = N (tons day-1) by box for each species/year
     PPdata <- rbind(PPdata,PPvar)
-    PPdata2 <- rbind(PPdata2,PPvar2)
-  }
+  } #species loop
 
-  dailypp <- PPdata %>%
+  dailyspeciesbox <- PPdata
+
+  # sum over box
+  dailyspecies <- dailyspeciesbox %>%
+    dplyr::group_by(year,day,variable,t) %>%
+    dplyr::summarise(value = sum(value),.groups="drop")
+
+  # sum over species and box
+  daily <- dailyspeciesbox %>%
     dplyr::group_by(year,day,t) %>%
-    dplyr::summarise(pp = sum(value),.groups="drop")
+    dplyr::summarise(value = sum(value),.groups="drop")
 
-  annualpp <- dailypp %>%
+  # mean over day (daily average)
+  annual <- dailyspeciesbox %>%
+    dplyr::group_by(year,day,t) %>%
+    dplyr::summarise(value = sum(value),.groups="drop") %>%
     dplyr::group_by(year) %>%
-    dplyr::summarise(pp = mean(pp),.groups="drop") %>%
+    dplyr::summarise(value = mean(value),.groups="drop") %>%
     dplyr::mutate(t = lubridate::date_decimal(year+.5))
 
   pp <- list()
-  pp$annual <- annualpp
-  pp$daily <- dailypp
-  pp$dailyspecies <-PPdata
-  pp$dailybox <- PPdata2
-  pp$totalArea <- totalArea
+
+  pp$annual <- annual
+  pp$daily <- daily
+  pp$dailyspecies <- dailyspecies
+  pp$dailyspeciesbox <- dailyspeciesbox
+  pp$Areas <- epuarea
 
   return(pp)
 }
