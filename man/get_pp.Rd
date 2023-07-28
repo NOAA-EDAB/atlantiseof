@@ -15,12 +15,13 @@ get_pp(bgm, pathToForcing)
 }
 \value{
 list of output
-\item{annual}{annual primary production (tons Nitrogen or Carbon) for all primary producers in NEUS}
-\item{daily}{daily primary production (tons Nitrogen or Carbon)}
-\item{dailyspecies}{daily primary production (tons Nitrogen or Carbon)}
-\item{dailybox}{daily primary production by box (tons Nitrogen or Carbon)}
-\item{totalArea}{area domain}
+\item{dailyspeciesbox}{daily primary production by species and atlantis box (tons Nitrogen)}
+\item{dailyspecies}{daily primary production by species (tons Nitrogen)}
+\item{daily}{daily primary production (tons Nitrogen)}
+\item{annual}{annual primary production (tons Nitrogen) for all primary producers in NEUS}
+\item{totalArea}{area domain of NEUS model (km^2)}
 }
 \description{
 Get primary production data from nc forcing files
+NEUS atlantis is forced with 3 primary producer species (Diatoms, Dinoflagellates,Pico-Phytoplankton)
 }
