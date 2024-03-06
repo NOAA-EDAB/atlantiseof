@@ -4,12 +4,14 @@
 \alias{plot_pp}
 \title{Plot primary production data from Atlantis forcing files}
 \usage{
-plot_pp(ppdata, filterbyepu = NULL)
+plot_pp(ppdata, filterbyepu = NULL, filterbypp = "Diatom_N")
 }
 \arguments{
 \item{ppdata}{list. output from \code{ppdata}}
 
 \item{filterbyepu}{Character string. Name of epu to plot. (Options = "MAB","GB","GOM","SS") Default = NULL}
+
+\item{filterbypp}{Character string. Name of primary producer to filter by. Default = "Diatom_N"}
 }
 \value{
 Figures sent to Plots window

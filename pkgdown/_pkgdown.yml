@@ -26,10 +26,12 @@ navbar:
       - text: Supplementary
         href: articles/som.html
     slides:
-      text: Slides
+      text: Presentations
       menu:
-      - text: R Markdown slides
-        href: slides/slides.html
+      - text: MAFMC SSC Ecosystem WG (04,2022)
+        href: https://noaa-edab.github.io/presentations/20220428_SSCEcoWG_Gaichas.html#1
+      - text: MAFMC SSC Ecosystem WG (02,2023)
+        href: https://noaa-edab.github.io/presentations/20230227_SSCEcoWG_Beet.html#1
     posters:
       text: Posters
       menu:

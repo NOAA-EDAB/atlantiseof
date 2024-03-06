@@ -23,5 +23,5 @@ list of output
 }
 \description{
 Get primary production data from nc forcing files
-NEUS atlantis is forced with 3 primary producer species (Diatoms, Dinoflagellates,Pico-Phytoplankton)
+NEUS atlantis is forced with 3 primary producer species (Diatoms, Dinoflagellates,Picophytoplankton)
 }

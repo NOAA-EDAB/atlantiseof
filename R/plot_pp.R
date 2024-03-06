@@ -39,7 +39,7 @@ plot_pp <- function(ppdata,filterbyepu=NULL,filterbypp="Diatom_N"){
     p <- ggplot2::ggplot(data = epudata %>% dplyr::filter(year >=1998,epu == filterbyepu)) +
       ggplot2::geom_line(ggplot2::aes(x=t,y=N)) +
       ggplot2::facet_wrap(ggplot2::vars(variable)) +
-      ggplot2::ggtitle(paste0("Total Nitrogen for ",filterbyepu)) +
+      ggplot2::ggtitle(paste0("Daily Nitrogen for ",filterbyepu)) +
       ggplot2::ylab("N (tons)")
     plot(p)
   }
@@ -54,10 +54,10 @@ plot_pp <- function(ppdata,filterbyepu=NULL,filterbypp="Diatom_N"){
 
   p <- ggplot2::ggplot(data = epudata2 %>%
                          dplyr::filter(year >=1998,variable %in% filterbypp)) +
-    ggplot2::geom_line(ggplot2::aes(x=year,y=C)) +
+    ggplot2::geom_line(ggplot2::aes(x=year,y=C/1e6)) +
     ggplot2::facet_wrap(ggplot2::vars(epu),scales="free_y") +
-    ggplot2::ggtitle(paste0("Total Carbon of ",filterbypp, "available per year")) +
-    ggplot2::ylab("C (tons)")
+    ggplot2::ggtitle(paste0("Annual Carbon for ",filterbypp)) +
+    ggplot2::ylab("C (million tons)")
   print(p)
 
 
