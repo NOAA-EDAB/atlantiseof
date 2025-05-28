@@ -18,7 +18,9 @@ Imports:
     readr,
     sf,
     NEFSCspatial,
-    atlantisdiagnostics
+    atlantisdiagnostics,
+    ecodata
 Remotes:
     NEFSCspatial=NEFSC/NEFSC-Spatial,
-    NOAA-EDAB/atlantisdiagnostics
+    NOAA-EDAB/atlantisdiagnostics,
+    NOAA-EDAB/ecodata
