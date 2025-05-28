@@ -7,3 +7,5 @@
 ^posters$
 ^vignettes/som\.Rmd$
 ^\.github$
+^docs$
+^pkgdown$
