@@ -1,9 +1,16 @@
-# see https://pkgdown.r-lib.org/articles/pkgdown.html for yml help
+url: https://noaa-edab.github.io/atlantiseof/
+
+template:
+ bootstrap: 5
+
+#needed for package to be linked by other locally installed packages
+deploy:
+  install_metadata: true
 
 navbar:
   structure:
     left:
-    - home
+    #- home
     - manuscript
     - articles
     - slides
@@ -12,19 +19,19 @@ navbar:
     - reference
     right: github
   components:
-    home:
-      icon: fa-home fa-lg
-      href: index.html
+    # home:
+    #   icon: fa-home fa-lg
+    #   href: index.html
     manuscript:
       text: Manuscript
       menu:
-      - text: APA6 PDF
-        href: manuscript/manuscript.pdf
+      - text: None
+#        href: manuscript/
     articles:
       text: Supplementary
       menu:
       - text: Supplementary
-        href: articles/som.html
+        href: articles/eofIdeas.html
     slides:
       text: Presentations
       menu:
@@ -35,20 +42,20 @@ navbar:
     posters:
       text: Posters
       menu:
-      - text: Conference 2019
-        href: posters/poster.html
+      - text: None
+#        href: posters/
     reference:
       text: Functions
       href: reference/index.html
     github:
       text: source code
       icon: fa-lg fa-github
-      href: https://github.com/user/repo
+      href: https://github.com/NOAA-EDAB/atlantiseof
 
-home:
-  strip_header: true
-  links:
-    - text: A link to X
-      href: some link
-  Authors:
-    - text: Author 1
+# home:
+#   strip_header: true
+#   links:
+#     - text: A link to X
+#       href: some link
+#   Authors:
+#     - text: Author 1

@@ -9,7 +9,8 @@ Description: Using the the NEUS Atlantis Ecosystem model we explore regional eco
 License: file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.2.3.
+URL: https://noaa-edab.github.io/atlantiseof/, https://github.com/NOAA-EDAB/atlantiseof/
 Imports: 
     dplyr,
     ggplot2,
