@@ -71,11 +71,11 @@ ecodata::ppr %>%
 
 ```
 
+* Threshold = .276 (PP = 400, alpha = 0.1, TE = .1, TL = 3.6)
+* Threshold = 1.14 (PP = 450, alpha = 0.15, TE = .12, TL = 3.4)
+* Threshold = 2.73 (PP = 500, alpha = 0.15, TE = .14, TL = 3.2)
+* Threshold = 3.64 (PP = 500, alpha = 0.20, TE = .14, TL = 3.2)
 
-Threshold = .276 (PP = 400, alpha = 0.1, TE = .1, TL = 3.6)
-Threshold = 1.14 (PP = 450, alpha = 0.15, TE = .12, TL = 3.4)
-Threshold = 2.73 (PP = 500, alpha = 0.15, TE = .14, TL = 3.2)
-Threshold = 3.64 (PP = 500, alpha = 0.20, TE = .14, TL = 3.2)
 
 ### MAB Ryther index. Regional thresholds
 
@@ -94,10 +94,11 @@ ecodata::ppr %>%
 ```
 
 
-Threshold = .68 (PP = 400, alpha = 0.1, TE = .1, TL = 3.6)
-Threshold = 2.8 (PP = 450, alpha = 0.15, TE = .12, TL = 3.4)
-Threshold = 6.72 (PP = 500, alpha = 0.15, TE = .14, TL = 3.2)
-Threshold = 8.96 (PP = 500, alpha = 0.20, TE = .14, TL = 3.2)
+* Threshold = .68 (PP = 400, alpha = 0.1, TE = .1, TL = 3.6)
+* Threshold = 2.8 (PP = 450, alpha = 0.15, TE = .12, TL = 3.4)
+* Threshold = 6.72 (PP = 500, alpha = 0.15, TE = .14, TL = 3.2)
+* Threshold = 8.96 (PP = 500, alpha = 0.20, TE = .14, TL = 3.2)
+
 
 Calculate this on our regional footprint using PP, TL information from region, not relying on Global estimates, since different areas of the world will be more/less productive than others.
 

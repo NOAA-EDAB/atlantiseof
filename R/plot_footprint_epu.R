@@ -13,7 +13,7 @@ plot_footprint_epu <- function(crs=4269L){
   options(warn = -1)
   sf::sf_use_s2(FALSE)
   neusEPU <- NEFSCspatial::Neus_atlantis
-  message("Please wait ... plotting map")
+  #message("Please wait ... plotting map")
   p1 <- ggplot2::ggplot(data  = neusEPU) +
     ggplot2::geom_sf(mapping=ggplot2::aes(fill=epu), alpha = .3, color = "grey" ) +
     # add centroid text for stat areas
