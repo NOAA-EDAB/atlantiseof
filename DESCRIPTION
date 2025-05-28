@@ -20,5 +20,5 @@ Imports:
     NEFSCspatial,
     atlantisprocessing
 Remotes:
-    NEFSC/NEFSCspatial,
+    NEFSCspatial=NEFSC/NEFSC-Spatial,
     NOAA-EDAB/atlantisprocessing
