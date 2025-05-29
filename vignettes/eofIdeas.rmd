@@ -1,6 +1,10 @@
 ---
-title: "EOF"
-output: html_document
+title: "Ecosystem Overfishing Ideas"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Ecosystem Overfishing Ideas}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -335,8 +339,9 @@ Detailed diet data is first processed outside of R. (Instructions in documentati
 This value for each species uses diet data combined over space, time, age class
 
 ```{r TL1, eval = T, echo =F}
-  tldata <- est_trophic_level()
-  tldata$figuretl
+knitr::include_graphics("figures/atlantisTrophicLevelDiet.png")
+#  tldata <- est_trophic_level()
+#  tldata$figuretl
 
 ```
 
@@ -347,8 +352,9 @@ This value for each species uses diet data combined over space, time, age class
 As you may expect, pretty constant.
 
 ```{r TL2, eval = T, echo =F}
-  tldata <- est_trophic_level_time()
-  tldata$figuretl
+  # tldata <- est_trophic_level_time()
+  # tldata$figuretl
+knitr::include_graphics("figures/atlantisTrophicLevelDietTime.png")
 
 ```
 
@@ -358,9 +364,9 @@ As you may expect, pretty constant.
 In the parameter files we define the diet preference. This is not always realized based on availability of prey due to over lap, abundance or size
 
 ```{r TL3, eval = T, echo =F}
-  tldata <- est_trophic_level_from_params()
-  tldata$figuretl
-
+  # tldata <- est_trophic_level_from_params()
+  # tldata$figuretl
+knitr::include_graphics("figures/atlantisTrophicLevelDietParams.png")
 ```
 
 ### Compare trophic levels
