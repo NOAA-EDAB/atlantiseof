@@ -16,9 +16,19 @@ Imports:
     ggplot2,
     magrittr,
     readr,
+    here,
+    lubridate,
+    ncdf4,
+    rbgm,
+    tibble,
+    tidyr,
     sf,
     NEFSCspatial,
-    atlantisdiagnostics
+    atlantisdiagnostics,
+    atlantisom,
+    atlantistools
 Remotes:
     NEFSCspatial=NEFSC/NEFSC-Spatial,
     NOAA-EDAB/atlantisdiagnostics
+    r4atlantis/atlantisom,
+    Atlantis-Ecosystem-Model/atlantistools
