@@ -30,6 +30,7 @@ Imports:
     ecodata
 Remotes:
     NEFSCspatial=NEFSC/NEFSC-Spatial,
-    NOAA-EDAB/atlantisdiagnostics
+    NOAA-EDAB/atlantisdiagnostics,
+    NOAA-EDAB/ecodata,
     r4atlantis/atlantisom,
     Atlantis-Ecosystem-Model/atlantistools
