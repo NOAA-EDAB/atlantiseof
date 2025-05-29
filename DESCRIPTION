@@ -26,7 +26,8 @@ Imports:
     NEFSCspatial,
     atlantisdiagnostics,
     atlantisom,
-    atlantistools
+    atlantistools,
+    ecodata
 Remotes:
     NEFSCspatial=NEFSC/NEFSC-Spatial,
     NOAA-EDAB/atlantisdiagnostics
