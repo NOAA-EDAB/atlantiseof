@@ -10,8 +10,6 @@ get_pp(bgm, pathToForcing)
 \item{bgm}{Path to bgm file}
 
 \item{pathToForcing}{Character sting. Path to location of forcing files}
-
-\item{convertNtoC}{Boolean. Convert Nitrogen (Atlantis units) to Carbon (Default = T)}
 }
 \value{
 list of output

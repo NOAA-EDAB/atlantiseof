@@ -5,7 +5,6 @@
 #'
 #' @param bgm Path to bgm file
 #' @param pathToForcing Character sting. Path to location of forcing files
-#' @param convertNtoC Boolean. Convert Nitrogen (Atlantis units) to Carbon (Default = T)
 #'
 #' @return list of output
 #' \item{dailyspeciesbox}{daily primary production by species and atlantis box (tons Nitrogen)}

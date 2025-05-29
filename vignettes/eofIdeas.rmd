@@ -1,6 +1,10 @@
 ---
-title: "EOF"
-output: html_document
+title: "Ecosystem Overfishing Ideas"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Ecosystem Overfishing Ideas}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
@@ -57,7 +61,7 @@ This would represent the current state of fishing worldwide and considered an ac
 
 From Ecodata 2022.
 Thresholds based on global estimates of primary production.
-```{r ecodataRytherGlobal, eval = TRUE, echo = FALSE}
+```{r ecodataRytherGlobal, eval = TRUE, echo = FALSE,fig.alt="MAB Ryther index with global thresholds"}
 ecodata::ppr %>%
   dplyr::filter(Var == "Ryther",EPU == "MAB") %>%
   ggplot2::ggplot(.) +
@@ -81,7 +85,7 @@ ecodata::ppr %>%
 
 From Ecodata 2022.
 Thresholds based on regional estimates of primary production.
-```{r ecodataRytherMAB, eval = TRUE, echo = FALSE}
+```{r ecodataRytherMAB, eval = TRUE, echo = FALSE, fig.alt="MAB Ryther index with regional thresholds"}
 ecodata::ppr %>%
   dplyr::filter(Var == "Ryther",EPU == "MAB") %>%
   ggplot2::ggplot(.) +
@@ -146,7 +150,7 @@ Always more Carbon than Nitrogen in organic matter. C:N of 5.7 used in atlantis.
 
 Atlantis boxes have been mapped to NEUS EPUs (see Caracappa et al)
 
-```{r domain, echo = F}
+```{r domain, echo = FALSE, eval = TRUE, fig.alt="Map of NEUS Atlantis boxes and EPU boundaries"}
 neusEPU <- plot_footprint_epu()
 mabarea <- neusEPU %>% 
   dplyr::filter(epu=="MAB") %>% 
@@ -162,7 +166,7 @@ All following plots use the NEUS spatial footprint (Boxes 1:22) ~ 264,000 $km^{2
 
 
 
-```{r N, echo = FALSE}
+```{r N, echo = FALSE, eval = TRUE, fig.alt="Primary production in NEUS Atlantis boxes"}
 
 temp <- base::tempfile()
 download.file(url="https://raw.githubusercontent.com/NOAA-EDAB/neus-atlantis/master/currentVersion/neus_tmerc_RM2.bgm",destfile=temp, quiet=TRUE)
@@ -216,7 +220,7 @@ overallmean <- pp$daily %>%
 
 Using three values for system PP. Min, mean, max of annual time series
 
-```{r thresholdsetup, eval = T, echo = F}
+```{r thresholdsetup, eval = TRUE, echo = FALSE, fig.alt="MAB primary production values from Atlantis data"}
 
 mab <- pp$dailyspeciesbox %>%
   dplyr::left_join(.,NEFSCspatial::Neus_atlantis %>% sf::st_as_sf(),by = c("box"="BOX_ID")) %>%
@@ -334,9 +338,10 @@ Detailed diet data is first processed outside of R. (Instructions in documentati
 
 This value for each species uses diet data combined over space, time, age class
 
-```{r TL1, eval = T, echo =F}
-  tldata <- est_trophic_level()
-  tldata$figuretl
+```{r TL1, eval = T, echo =FALSE, fig.alt="Estimated trophic levels from Atlantis realized diet data"}
+knitr::include_graphics("figures/atlantisTrophicLevelDiet.png")
+#  tldata <- est_trophic_level()
+#  tldata$figuretl
 
 ```
 
@@ -346,9 +351,10 @@ This value for each species uses diet data combined over space, time, age class
 
 As you may expect, pretty constant.
 
-```{r TL2, eval = T, echo =F}
-  tldata <- est_trophic_level_time()
-  tldata$figuretl
+```{r TL2, eval = TRUE, echo =FALSE, fig.alt="Estimated trophic levels from Atlantis realized diet data over time"}
+  # tldata <- est_trophic_level_time()
+  # tldata$figuretl
+knitr::include_graphics("figures/atlantisTrophicLevelDietTime.png")
 
 ```
 
@@ -357,17 +363,17 @@ As you may expect, pretty constant.
 
 In the parameter files we define the diet preference. This is not always realized based on availability of prey due to over lap, abundance or size
 
-```{r TL3, eval = T, echo =F}
-  tldata <- est_trophic_level_from_params()
-  tldata$figuretl
-
+```{r TL3, eval = T, echo =FALSE, fig.alt="Estimated trophic levels from Atlantis diet parameters"}
+  # tldata <- est_trophic_level_from_params()
+  # tldata$figuretl
+knitr::include_graphics("figures/atlantisTrophicLevelDietParams.png")
 ```
 
 ### Compare trophic levels
 
 Compare trophic level estimates. realized diet vs diet parameters
 
-```{r compare, echo = F, eval =T}
+```{r compare, echo = FALSE, eval =TRUE, fig.alt="Comparison of trophic level estimates from Atlantis realized diet data and diet parameters"}
 knitr::include_graphics("figures/compareTrophicLevels.png")
 ```
 
