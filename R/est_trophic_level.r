@@ -23,11 +23,16 @@
 #'
 #'@export
 
+# param.dir = 'C:/Users/joseph.caracappa/Documents/GitHub/neus-atlantis/currentVersion/'
+# atl.dir = 'C:/Users/joseph.caracappa/Documents/Data/master_nofishing_06162025/'
+# fgs = 'neus_groups.csv'
+# detDietfile = 'neus_outputDetailedDietCheck.txt'
+# preprocess =T
 
 est_trophic_level <- function(param.dir = "C:/Users/andrew.beet/Documents/myWork/githubRepos/neus-atlantis/currentVersion",
                               atl.dir = here::here("other/dev_3a75e57d1"),
                               fgs = "neus_groups.csv",
-                              detDietfile = "DetDiet2.gz",
+                              detDietfile = "neus_ouputDetDiet_Processed.gz",
                               plottl=F) {
 
   fgs <- atlantisom::load_fgs(dir = param.dir,file_fgs= fgs)

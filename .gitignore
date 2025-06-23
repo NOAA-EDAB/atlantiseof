@@ -8,3 +8,5 @@
 #folders
 other
 docs
+
+*.sh
