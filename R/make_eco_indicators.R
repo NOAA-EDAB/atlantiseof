@@ -6,7 +6,7 @@
 #'@param group.index Character String. Name of the group index with non-atlantis categories
 #'@param fgs.file Character String. Name of the functional groups file
 #'@param dietSource Character String. Whether to use realized diets (diet), detailedDiet (detdiet) or parameter files (param)
-#'@param plottl Boolean. Plot the Trophic level to window. Default = F
+#'@param timeRange Numeric Vector. Range of years to include in the analysis
 #'
 #'@return list
 #'\item{trophiclevel}{dataframe. Species, year, trophic level}
@@ -14,14 +14,9 @@
 #'
 #'@export
 
-param.dir = 'C:/Users/joseph.caracappa/Documents/GitHub/neus-atlantis/currentVersion/'
-atl.dir = 'C:/Users/joseph.caracappa/Documents/Data/master_nofishing_06162025/'
-group.index = here::here('data-raw','neus_species_index.csv')
-fgs.file  = 'C:/Users/joseph.caracappa/Documents/GitHub/neus-atlantis/currentVersion/neus_groups.csv'
-dietSource = 'param'
-timeRange = 30:52
 
-make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange){
+
+make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file, dietSource){
   
   
   #Load the groups.csv file
@@ -43,7 +38,13 @@ make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange){
   #Total Catch
   catch.file = paste0(atl.dir,'neus_outputCatch.txt')
   if(file.exists(catch.file)){
-    catch.df = read.table(catch.file,header =T)  
+    catch.df = read.table(catch.file,header =T)%>%
+      tidyr::gather(Code,Catch,-Time)%>%
+      dplyr::filter(Code %in% groups$Code)%>%
+      dplyr::mutate(year = floor(Time/365))%>%
+      dplyr::filter(year %in% timeRange) %>%
+      dplyr::group_by(Code)%>%
+      dplyr::summarise(catch = mean(Catch,na.rm=T))
   }else{
     catch.df = data.frame(Code = groups$Code,
                           catch = 0)
@@ -81,7 +82,9 @@ make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange){
     if(!file.exists(paste0(atl.dir,new.diet.file))){
       atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  'neus_outputDetailedDietCheck.txt',outputname =   new.diet.file)  
     }
-    tl = atlantiseof::est_trophic_level(param.dir = param.dir, atl.dir = atl.dir, fgs = 'neus_groups.csv', detDietfile = new.diet.file,plottl = F)
+    tl = atlantiseof::est_trophic_level(param.dir = param.dir, atl.dir = atl.dir, fgs = 'neus_groups.csv', detDietfile = new.diet.file,plottl = F)$trophiclevel
+    tl.df = data.frame(Name = names(tl),trophicLevel = tl) 
+    rownames(tl.df) = NULL
   }else if(dietSource == 'diet'){
     
   }else if(dietSource == 'param'){
@@ -99,4 +102,26 @@ make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange){
   #Mean trophic level of biomass
   mean.tl.bio = sum(spp.df$biomass * tl.df$trophicLevel[match(spp.df$Name,tl.df$Name)],na.rm=T) / sum(spp.df$biomass,na.rm=T)
   
+  #Return dataframe of all indicators
+  
+  return(data.frame(
+    bio.tot = bio.tot,
+    catch.tot = catch.tot,
+    catch.bio = catch.bio,
+    prop.of = prop.of,
+    prop.bio.pelagic = prop.bio.pelagic,
+    prop.bio.predator = prop.bio.predator,
+    mean.tl.catch = mean.tl.catch,
+    mean.tl.bio = mean.tl.bio
+  ))
+  # return(list(
+  #   bio.tot = bio.tot,
+  #   catch.tot = catch.tot,
+  #   catch.bio = catch.bio,
+  #   prop.of = prop.of,
+  #   prop.bio.pelagic = prop.bio.pelagic,
+  #   prop.bio.predator = prop.bio.predator,
+  #   mean.tl.catch = mean.tl.catch,
+  #   mean.tl.bio = mean.tl.bio
+  # ))
 }
