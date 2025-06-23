@@ -14,6 +14,8 @@ est_trophic_level(
 )
 }
 \arguments{
+\item{param.dir}{Character String. Path to Parameter directory}
+
 \item{atl.dir}{Character String. Path to output directory}
 
 \item{fgs}{Character String. Name of groups.csv file}
@@ -21,8 +23,6 @@ est_trophic_level(
 \item{detDietfile}{Character String. Name of processed zipped detailed diet file}
 
 \item{plottl}{Boolean. Plot the Trophic level to window. Default = F}
-
-\item{param, dir}{Character String. Path to Parameter directory}
 }
 \value{
 list

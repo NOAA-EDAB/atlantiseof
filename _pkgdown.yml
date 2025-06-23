@@ -30,7 +30,7 @@ navbar:
     articles:
       text: Supplementary
       menu:
-      - text: Supplementary
+      - text: MAB ideas
         href: articles/eofIdeas.html
     slides:
       text: Presentations

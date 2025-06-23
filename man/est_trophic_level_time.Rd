@@ -15,6 +15,8 @@ est_trophic_level_time(
 )
 }
 \arguments{
+\item{param.dir}{Character String. Path to Parameter directory}
+
 \item{atl.dir}{Character String. Path to output directory}
 
 \item{fgs}{Character String. Name of groups.csv file}
@@ -24,8 +26,6 @@ est_trophic_level_time(
 \item{timeRange}{Vector}
 
 \item{plottl}{Boolean. Plot the Trophic level to window. Default = F}
-
-\item{param, dir}{Character String. Path to Parameter directory}
 }
 \value{
 list

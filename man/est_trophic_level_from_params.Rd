@@ -13,15 +13,11 @@ est_trophic_level_from_params(
 )
 }
 \arguments{
+\item{prm_biol}{Character String. Path to biology prm file (Atlantis)}
+
 \item{fgs}{Character String. Name of groups.csv file}
 
 \item{plottl}{Boolean. Plot the Trophic level to window. Default = F}
-
-\item{param, dir}{Character String. Path to Parameter directory}
-
-\item{atl.dir}{Character String. Path to output directory}
-
-\item{detDietfile}{Character String. Name of processed zipped detailed diet file}
 }
 \value{
 list

@@ -12,7 +12,7 @@
 #'   # concatenate them
 #'   cat DetDietHead.gz DetDiet.gz > DetDiet2.gz
 #'
-#'@param param,dir Character String. Path to Parameter directory
+#'@param param.dir Character String. Path to Parameter directory
 #'@param atl.dir Character String. Path to output directory
 #'@param fgs Character String. Name of groups.csv file
 #'@param detDietfile Character String. Name of processed zipped detailed diet file
