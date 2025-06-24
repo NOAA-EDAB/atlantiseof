@@ -50,9 +50,12 @@ make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file
                           catch = 0)
   }
   
+  spp.bmsy = atlantiseof::get_bmsy_atl(atl.dir = atl.dir, param.dir =param.dir)
+  
   spp.df = bio.df %>%
     dplyr::left_join(stock.ref)%>%
     dplyr::left_join(catch.df)%>%
+    dplyr::left_join(spp.bmsy)%>%
     dplyr::mutate(catch.biomass = catch/biomass,
                   overfished = ifelse(biomass>bmsy,0,1))%>%
     dplyr::left_join(groups)
@@ -67,6 +70,8 @@ make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file
   catch.bio = catch.tot/bio.tot
   
   #Proportion Overfished (NEEDS TO FIT A SURPLUS PRODUCTION MODEL)
+  
+  
   prop.of = sum(spp.df$overfished,na.rm=T)/length(!is.na(spp.df$overfished))
 
   #Proportion Biomass Pelagic

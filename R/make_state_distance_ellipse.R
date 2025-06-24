@@ -9,7 +9,7 @@
 #'@export
 
 
-make_state_distance = function(ideal.state, ideal.center, observed.state){
+make_state_distance_ellipse = function(ideal.state, ideal.center, observed.state){
   
   #objective: minimize squared distance to P
   objective <- function(x) {
@@ -34,6 +34,16 @@ make_state_distance = function(ideal.state, ideal.center, observed.state){
   scale_factor <- sqrt(sum((shifted / ideal.state)^2))
   x0 <- ideal.center + (shifted * ideal.state / scale_factor)
   
+  if(any(!is.finite(ideal.state))){
+    
+    #for +Inf
+    x0[x0 > 0 & is.infinite(x0)] <- 1e6  # Set infinite states to a large value
+    #for -Inf
+    x0[x0 < 0 & is.infinite(x0)] <- 1e6  # Set negative states to a large value
+  }
+  
+  
+  
   # Set up optimization
   opts <- list("algorithm" = "NLOPT_LD_AUGLAG_EQ",
                "xtol_rel" = 1e-8,
@@ -57,7 +67,7 @@ make_state_distance = function(ideal.state, ideal.center, observed.state){
   
 }
 
-make_state_distance(  ideal.state = c(3, 2, 1),      # semi-axes
-  ideal.center = c(1, 2, 3),    # center of ellipsoid
-  observed.state = c(5, 2, 0)       # external point
-)
+# make_state_distance(  ideal.state = c(3, 2, 4),      # semi-axes
+#   ideal.center = c(1, 2, 3),    # center of ellipsoid
+#   observed.state = c(5, 2, 0)       # external point
+# )

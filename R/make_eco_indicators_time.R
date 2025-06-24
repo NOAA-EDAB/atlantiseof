@@ -52,10 +52,24 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
   spp.df = bio.df %>%
     dplyr::left_join(stock.ref)%>%
     dplyr::left_join(catch.df)%>%
-    dplyr::mutate(catch.biomass = catch/biomass,
-                  overfished = ifelse(biomass>bmsy,0,1))%>%
-    dplyr::left_join(groups)
+    dplyr::mutate(catch.biomass = catch/biomass)%>%
+    dplyr::left_join(groups)%>%
+    dplyr::select(-bmsy)
+  
+  #Get all species with non-zero catch
+  is.fished = spp.df %>%
+    dplyr::filter(!is.na(catch) & (catch > 0 | biomass > 0))
+  spp.bmsy = data.frame(Code = unique(is.fished$Code), bmsy = NA)
+  for(i in 1:nrow(spp.bmsy)){
+    this.spp = spp.df %>% filter(Code == spp.bmsy$Code[i])
+    spp.bmsy$bmsy[i] = atlantiseof::est_bmsy(biomass = this.spp$biomass,catch = this.spp$catch)$B_msy
+  }
     
+  #Add overfished status
+  spp.df = spp.df %>%
+    dplyr::left_join(spp.bmsy)%>%
+    dplyr::mutate(overfished = ifelse(biomass>bmsy,0,1))
+  
   #Biomass and catch metrics
   eco.df = spp.df %>%
     dplyr::group_by(year) %>%
