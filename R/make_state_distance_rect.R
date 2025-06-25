@@ -20,8 +20,8 @@ make_state_distance_rect <- function(observed.state, desired.lower, desired.uppe
   # Convert NA in bounds to unbounded values.
   # NA in lower will be interpreted as -Inf
   # NA in upper will be interpreted as +Inf
-  lower[is.na(desired.lower)] <- -Inf
-  upper[is.na(desired.upper)] <- Inf
+  desired.lower[is.na(desired.lower)] <- -Inf
+  desired.upper[is.na(desired.upper)] <- Inf
   
   # The closest point is the element-wise clamp of P to the available interval.
   # For each coordinate, take the maximum of (P, lower) and then the minimum with (upper).
