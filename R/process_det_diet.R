@@ -12,7 +12,7 @@
 process_det_diet <- function(atl.dir, detDietfile, outputname, cloud =F) {
   
   #zip up file
-  if(sudo){
+  if(cloud){
     system(paste0('sudo chmod 775 ',atl.dir))
     system2("sudo", args = c("gzip", "-k", paste0(atl.dir, 
                                                   detDietfile)))
