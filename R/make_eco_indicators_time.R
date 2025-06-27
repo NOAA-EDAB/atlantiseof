@@ -8,13 +8,14 @@
 #'@param dietSource Character String. Whether to use realized diets (diet), detailedDiet (detdiet) or parameter files (param)
 #'@param timeRange Numeric vector. Range of years to summarize
 #'@param start.year Numeric. Year to start the time series. Default = 1964
+#'@param cloud Logical. If TRUE, run on cloud Default is FALSE.
 #'
 #'@return dataframe of ecological indicators over time
 #'
 #'@export
 
 
-make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietSource,timeRange,start.year = 1964){
+make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietSource,timeRange,start.year = 1964,cloud = F){
   
   
   #Load the groups.csv file
@@ -92,7 +93,7 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
     
     new.diet.file = 'neus_outputDetDiet_processed.gz'
     if(!file.exists(paste0(atl.dir,new.diet.file))){
-      atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  'neus_outputDetailedDietCheck.txt',outputname =   new.diet.file)  
+      atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  'neus_outputDetailedDietCheck.txt',outputname =   new.diet.file, cloud = cloud)  
     }
     tl.df = atlantiseof::est_trophic_level_time(param.dir = param.dir, atl.dir = atl.dir, fgs = 'neus_groups.csv', detDietfile = new.diet.file,plottl = F)$trophiclevel
     tl.df = tl.df %>%

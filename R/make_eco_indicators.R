@@ -7,6 +7,7 @@
 #'@param fgs.file Character String. Name of the functional groups file
 #'@param dietSource Character String. Whether to use realized diets (diet), detailedDiet (detdiet) or parameter files (param)
 #'@param timeRange Numeric Vector. Range of years to include in the analysis
+#'@param cloud Logical. If TRUE, run on cloud Default is FALSE.
 #'
 #'@return list
 #'\item{trophiclevel}{dataframe. Species, year, trophic level}
@@ -16,7 +17,7 @@
 
 
 
-make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file, dietSource){
+make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file, dietSource,cloud){
   
   
   #Load the groups.csv file
@@ -85,7 +86,7 @@ make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file
     
     new.diet.file = 'neus_outputDetDiet_processed.gz'
     if(!file.exists(paste0(atl.dir,new.diet.file))){
-      atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  'neus_outputDetailedDietCheck.txt',outputname =   new.diet.file)  
+      atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  'neus_outputDetailedDietCheck.txt',outputname =   new.diet.file, cloud = cloud)  
     }
     tl = atlantiseof::est_trophic_level(param.dir = param.dir, atl.dir = atl.dir, fgs = 'neus_groups.csv', detDietfile = new.diet.file,plottl = F)$trophiclevel
     tl.df = data.frame(Name = names(tl),trophicLevel = tl) 
