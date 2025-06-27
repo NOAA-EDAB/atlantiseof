@@ -4,7 +4,7 @@
 \alias{process_det_diet}
 \title{Processes detailed diet output for use in atlantisom}
 \usage{
-process_det_diet(atl.dir, detDietfile, outputname)
+process_det_diet(atl.dir, detDietfile, outputname, cloud = F)
 }
 \arguments{
 \item{atl.dir}{Character String. Path to output directory}
@@ -12,6 +12,8 @@ process_det_diet(atl.dir, detDietfile, outputname)
 \item{detDietfile}{Character String. Name of processed zipped detailed diet file}
 
 \item{outputname}{character String. Name of output file}
+
+\item{cloud}{Logical. If TRUE, run on cloud Default is FALSE.}
 }
 \value{
 DetDiet_Processed.gz
