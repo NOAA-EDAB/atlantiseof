@@ -33,7 +33,7 @@ make_state_distance_rect <- function(observed.state, desired.lower, desired.uppe
   return(list(distance = distance, closest_point = closest_point))
 }
 
-# make_state_distance_rect(observed.state = c(5, -1, 3, 1),
-#                       desired.lower =  c(0, -Inf, -Inf, 5),
-#                       desired.upper = c(10, 0, Inf, Inf))
+# make_state_distance_rect(observed.state = c(-0,0),
+#                       desired.lower =  c(-10, -10),
+#                       desired.upper = c(10, 10))
 
