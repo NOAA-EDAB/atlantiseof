@@ -19,7 +19,13 @@ est_bmsy = function(biomass,catch, start_r = 0.5, start_k = NULL){
     }
     n <- length(biomass)
     if(n < 2) {
-      stop("Time series must have at least two observations.")
+      print("Time series must have at least two observations.")
+      return(list(r = NA,
+                  k = NA,
+                  MSY = NA,
+                  B_msy = NA,
+                  model = NA,
+                  fit_data = NA))
     }
     
     # Calculate production: Production_t = (B[t+1] - B[t]) + catch[t]

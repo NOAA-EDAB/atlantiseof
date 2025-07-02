@@ -45,7 +45,7 @@ get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
                                     atl.dir = atl.dir,
                                     fgs = fgs,detDietfile = F,plottl = F, dietSource = dietSource) %>%
     dplyr::filter(prey %in% phyto.spp & consumption > 0) %>%
-    dplyr::left_join(select(fgs.df,Code,Name,NumCohorts,NumAgeClassSize), by = c('pred' = 'Name')) %>%
+    dplyr::left_join(dplyr::select(fgs.df,Code,Name,NumCohorts,NumAgeClassSize), by = c('pred' = 'Name')) %>%
     dplyr::left_join(age.mat, by = c('Code'= 'spp'))%>%
     dplyr::mutate(age.mat = ifelse(is.na(age.mat),1,age.mat))
   
@@ -122,17 +122,17 @@ get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
             )
         }else{
           
-          this.grazer.diet %>%
-            dplyr::filter(pred == grazer.spp[i], agecl == this.agecl[j])
+          this.grazer.consumed = this.grazer.diet %>%
+            dplyr::filter(pred == grazer.spp[i], agecl == this.agecl[j]) %>%
             dplyr::select(time,pred,agecl,pred_stanza,prey,prop.consumption) %>%
             dplyr::left_join(data.frame(time = prod.time.yr[prod.time.match], eat = this.grazer.data))
           
-          data.frame(pred = grazer.spp[i],
+          this.grazer.ls[[j]] =data.frame(pred = grazer.spp[i],
                      agecl = this.agecl[j],
                      time = prod.time.yr[prod.time.match],
                      pred_stanza = this.grazer.stanza,
-                     eat = this.grazer.data) %>%
-            dplyr::left_join()
+                     consumption = this.grazer.data) %>%
+            dplyr::left_join(this.grazer.consumed)
         }
 
       }

@@ -23,23 +23,23 @@ make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file
   #Load the groups.csv file
   stock.ref = atlantiseof::get_bmsy_ss(fgs = fgs.file, default.bmsy.frac = 0.4) %>%
     dplyr::group_by(Code) %>%
-    summarise(bmsy = mean(Bmsy,na.rm=T))
+    dplyr::summarise(bmsy = mean(Bmsy,na.rm=T))
   groups = read.csv(group.index,stringsAsFactors = F) %>%
-    left_join(stock.ref, by = 'Code')
+    dplyr::left_join(stock.ref, by = 'Code')
   
   #Total Biomass
-  bio.df = read.table(paste0(atl.dir,'neus_outputBiomIndx.txt'),header=T)%>%
+  bio.df = read.table(paste0(atl.dir,'neus_outputBiomIndx.txt'),header=T,fill =T)%>%
     tidyr::gather(Code,Biomass,-Time)%>%
     dplyr::filter(Code %in% groups$Code)%>%
     dplyr::mutate(year = floor(Time/365))%>%
     dplyr::filter(year %in% timeRange) %>%
     dplyr::group_by(Code)%>%
     dplyr::summarise(biomass = mean(Biomass,na.rm=T))
-  
+  print('bio done')
   #Total Catch
   catch.file = paste0(atl.dir,'neus_outputCatch.txt')
   if(file.exists(catch.file)){
-    catch.df = read.table(catch.file,header =T)%>%
+    catch.df = read.table(catch.file,header =T, fill = T)%>%
       tidyr::gather(Code,Catch,-Time)%>%
       dplyr::filter(Code %in% groups$Code)%>%
       dplyr::mutate(year = floor(Time/365))%>%
@@ -50,16 +50,27 @@ make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file
     catch.df = data.frame(Code = groups$Code,
                           catch = 0)
   }
+  print('catch done')
   
   spp.bmsy = atlantiseof::get_bmsy_atl(atl.dir = atl.dir, param.dir =param.dir)
   
-  spp.df = bio.df %>%
-    dplyr::left_join(stock.ref)%>%
-    dplyr::left_join(catch.df)%>%
-    dplyr::left_join(spp.bmsy)%>%
-    dplyr::mutate(catch.biomass = catch/biomass,
-                  overfished = ifelse(biomass>bmsy,0,1))%>%
-    dplyr::left_join(groups)
+  if(all(is.na(spp.bmsy))){
+    spp.df = bio.df %>%
+      dplyr::left_join(stock.ref)%>%
+      dplyr::left_join(catch.df)%>%
+      dplyr::mutate(bmsy = NA, 
+                    catch.biomass = catch/biomass,
+                    overfished = ifelse(biomass>bmsy,0,1))%>%
+      dplyr::left_join(groups)
+  }else{
+    spp.df = bio.df %>%
+      dplyr::left_join(stock.ref)%>%
+      dplyr::left_join(catch.df)%>%
+      dplyr::left_join(spp.bmsy)%>%
+      dplyr::mutate(catch.biomass = catch/biomass,
+                    overfished = ifelse(biomass>bmsy,0,1))%>%
+      dplyr::left_join(groups)
+  }
   
   #Total Biomass
   bio.tot = sum(spp.df$biomass,na.rm=T)

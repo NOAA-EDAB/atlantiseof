@@ -17,16 +17,15 @@
 
 make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietSource,timeRange,start.year = 1964,cloud = F){
   
-  
   #Load the groups.csv file
   stock.ref = atlantiseof::get_bmsy_ss(fgs = fgs.file, default.bmsy.frac = 0.4) %>%
     dplyr::group_by(Code) %>%
-    summarise(bmsy = mean(Bmsy,na.rm=T))
+    dplyr::summarise(bmsy = mean(Bmsy,na.rm=T))
   groups = read.csv(group.index,stringsAsFactors = F) %>%
-    left_join(stock.ref, by = 'Code')
+    dplyr::left_join(stock.ref, by = 'Code')
   
   #Total Biomass
-  bio.df = read.table(paste0(atl.dir,'neus_outputBiomIndx.txt'),header=T)%>%
+  bio.df = read.table(paste0(atl.dir,'neus_outputBiomIndx.txt'),header=T, fill = T)%>%
     tidyr::gather(Code,Biomass,-Time)%>%
     dplyr::filter(Code %in% groups$Code)%>%
     dplyr::mutate(year = floor(Time/365))%>%
@@ -37,7 +36,7 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
   #Total Catch
   catch.file = paste0(atl.dir,'neus_outputCatch.txt')
   if(file.exists(catch.file)){
-    catch.df = read.table(catch.file,header =T)%>%
+    catch.df = read.table(catch.file,header =T,fill =T)%>%
       tidyr::gather(Code,Catch,-Time)%>%
       dplyr::filter(Code %in% groups$Code)%>%
       dplyr::mutate(year = floor(Time/365))%>%
@@ -62,7 +61,7 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
     dplyr::filter(!is.na(catch) & (catch > 0 | biomass > 0))
   spp.bmsy = data.frame(Code = unique(is.fished$Code), bmsy = NA)
   for(i in 1:nrow(spp.bmsy)){
-    this.spp = spp.df %>% filter(Code == spp.bmsy$Code[i])
+    this.spp = spp.df %>% dplyr::filter(Code == spp.bmsy$Code[i])
     spp.bmsy$bmsy[i] = atlantiseof::est_bmsy(biomass = this.spp$biomass,catch = this.spp$catch)$B_msy
   }
     
@@ -95,7 +94,7 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
     if(!file.exists(paste0(atl.dir,new.diet.file))){
       atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  'neus_outputDetailedDietCheck.txt',outputname =   new.diet.file, cloud = cloud)  
     }
-    tl.df = atlantiseof::est_trophic_level_time(param.dir = param.dir, atl.dir = atl.dir, fgs = 'neus_groups.csv', detDietfile = new.diet.file,plottl = F)$trophiclevel
+    tl.df = atlantiseof::est_trophic_level_time(param.dir = param.dir, atl.dir = atl.dir, fgs = 'neus_groups.csv', detDietfile = new.diet.file,plottl = F,timeRange = NULL)$trophiclevel
     tl.df = tl.df %>%
       dplyr::left_join(groups, by = c('species' = 'Name'))%>%
       dplyr::select(year,Code,TL) %>%
@@ -118,7 +117,7 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
   
   #Mean Trophic level of catch by year
   mean.tl = spp.df %>%
-    left_join(tl.df)%>%
+    dplyr::left_join(tl.df)%>%
     dplyr::group_by(year) %>%
     dplyr::summarise(mean.tl.catch = sum(catch * trophicLevel,na.rm=T) / sum(catch,na.rm=T),
                      mean.tl.bio = sum(biomass * trophicLevel,na.rm=T) / sum(biomass,na.rm=T))

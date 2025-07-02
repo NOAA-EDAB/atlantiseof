@@ -8,23 +8,19 @@
 #'
 #'@export
 
-get_bmsy_atl = function(param.dir,atl.dir){
+get_bmsy_atl = function(param.dir,atl.dir,...){
   
-  bio.df = read.table(paste0(atl.dir,'neus_outputBiomIndx.txt'),header=T)%>%
+  bio.df = read.table(paste0(atl.dir,'neus_outputBiomIndx.txt'), fill =T,header=T)%>%
     tidyr::gather(Code,Biomass,-Time)%>%
-    dplyr::filter(Code %in% groups$Code)%>%
     dplyr::mutate(year = floor(Time/365))%>%
-    dplyr::filter(year %in% timeRange) %>%
     dplyr::group_by(Code,year)%>%
     dplyr::summarise(biomass = mean(Biomass,na.rm=T))
   
   catch.file = paste0(atl.dir,'neus_outputCatch.txt')
   if(file.exists(catch.file)){
-    catch.df = read.table(catch.file,header =T)%>%
+    catch.df = read.table(catch.file,header =T,fill = T)%>%
       tidyr::gather(Code,Catch,-Time)%>%
-      dplyr::filter(Code %in% groups$Code)%>%
       dplyr::mutate(year = floor(Time/365))%>%
-      dplyr::filter(year %in% timeRange) %>%
       dplyr::group_by(Code,year)%>%
       dplyr::summarise(catch = mean(Catch,na.rm=T))
   }else{
@@ -37,14 +33,25 @@ get_bmsy_atl = function(param.dir,atl.dir){
     dplyr::pull(Code)%>%
     unique()
   
+  if(length(fished.spp) == 0){
+    return(NA)
+  }
   spp.bmsy = data.frame(Code =fished.spp, bmsy = NA)
   for(i in 1:nrow(spp.bmsy)){
     this.biomass = bio.df %>%
-      dplyr::filter(Code == spp.bmsy$Code[i]) %>%
+      dplyr::filter(Code == spp.bmsy$Code[i]) 
+      
+    this.catch = catch.df %>%
+      dplyr::filter(Code == spp.bmsy$Code[i]) 
+      
+    yr.overlap = intersect(this.biomass$year, this.catch$year)
+    
+    this.biomass = this.biomass %>%
+      dplyr::filter(year %in% yr.overlap)%>%
       dplyr::pull(biomass)
     
-    this.catch = catch.df %>%
-      dplyr::filter(Code == spp.bmsy$Code[i]) %>%
+    this.catch = this.catch %>%
+      dplyr::filter(year %in% yr.overlap)%>%
       dplyr::pull(catch)
     
     spp.bmsy$bmsy[i] = atlantiseof::est_bmsy(biomass = this.biomass,catch = this.catch)$B_msy
