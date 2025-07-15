@@ -68,7 +68,7 @@ est_link_threshold = function(atl.dir, param.dir, dietSource = NA, year, TE, alp
     
     pp = pp.neus$C[which(year == param.combs$year[i])]
     
-    param.combs$threshold[i] = param.combs$alpha[i] * pp*10 * param.combs$TE[i] ^(TL-1)
+    param.combs$threshold[i] = param.combs$alpha[i] * pp * param.combs$TE[i] ^(TL-1)
   }
   
   return(param.combs)

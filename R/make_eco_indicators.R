@@ -17,7 +17,7 @@
 
 
 
-make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file, dietSource,cloud){
+make_eco_indicators = function(param.dir,atl.dir,group.index,timeRange, fgs.file, dietSource,cloud = F){
   
   
   #Load the groups.csv file

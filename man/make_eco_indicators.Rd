@@ -10,7 +10,8 @@ make_eco_indicators(
   group.index,
   timeRange,
   fgs.file,
-  dietSource
+  dietSource,
+  cloud = F
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ make_eco_indicators(
 \item{fgs.file}{Character String. Name of the functional groups file}
 
 \item{dietSource}{Character String. Whether to use realized diets (diet), detailedDiet (detdiet) or parameter files (param)}
+
+\item{cloud}{Logical. If TRUE, run on cloud Default is FALSE.}
 }
 \value{
 list

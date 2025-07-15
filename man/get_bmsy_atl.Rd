@@ -4,7 +4,7 @@
 \alias{get_bmsy_atl}
 \title{Generates a range of ecological indicators from atlantis output to be used as a summary of possible states}
 \usage{
-get_bmsy_atl(param.dir, atl.dir)
+get_bmsy_atl(param.dir, atl.dir, ...)
 }
 \arguments{
 \item{param.dir}{Character String. Path to Parameter directory}

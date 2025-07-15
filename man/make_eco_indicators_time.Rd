@@ -11,7 +11,8 @@ make_eco_indicators_time(
   fgs.file,
   dietSource,
   timeRange,
-  start.year = 1964
+  start.year = 1964,
+  cloud = F
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ make_eco_indicators_time(
 \item{timeRange}{Numeric vector. Range of years to summarize}
 
 \item{start.year}{Numeric. Year to start the time series. Default = 1964}
+
+\item{cloud}{Logical. If TRUE, run on cloud Default is FALSE.}
 }
 \value{
 dataframe of ecological indicators over time
