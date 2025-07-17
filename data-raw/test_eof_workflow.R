@@ -6,7 +6,7 @@ fgs.file  = 'C:/Users/joseph.caracappa/Documents/GitHub/neus-atlantis/currentVer
 dietSource = 'detdiet'
 timeRange = 30:52
 out.name = 'ref_'
-desired.p = c(0.25,0.75)
+desired.p = c(0.025,0.975)
 
 figure.dir = here::here('figures')
 ref.state.file = here::here('data-raw','ref_eco_state.rds')
@@ -37,4 +37,4 @@ atlantiseof::plot_ind_pca(data.dir = 'D:/catch_thresholds_eof_3/output/',
                           figure.dir =  here::here('figures','eof_thresholds_3',''))
 
 readRDS(file.path(out.dir, 'catch_thresholds_eof_3_eof_threshold.rds'))
-
+pca =readRDS(file.path(out.dir, 'pca_result.rds'))

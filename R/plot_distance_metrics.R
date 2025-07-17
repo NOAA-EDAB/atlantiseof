@@ -26,10 +26,12 @@ plot_distance_metrics <- function(figure.dir,distance.file,thresholds.file,ref.s
     dplyr::mutate(catch.tot.rel = catch.tot/catch.tot.ref)
   run.thresholds.df = readRDS(thresholds.file)
   
-  ref.threshold.mean = mean(run.thresholds.df$threshold,na.rm=T)
+  ref.threshold.min = min(run.thresholds.df$threshold,na.rm=T)
+  ref.threshold.max = max(run.thresholds.df$threshold,na.rm=T)
   
   #identify the catch scalar closest to the mean link threshold
-  scale.close.thresh =run.distance.df$catch.scalar[which.min(abs(run.distance.df$catch.threshold-ref.threshold.mean))]
+  scale.min.thresh =run.distance.df$catch.scalar[which.min(abs(run.distance.df$catch.threshold-ref.threshold.min))]
+  scale.max.thresh =run.distance.df$catch.scalar[which.min(abs(run.distance.df$catch.threshold-ref.threshold.max))]
   
   #plot1: Distance as a function of scalars of ref.threshold.mean
   ggplot2::ggplot(run.distance.df, ggplot2::aes(x = rel.threshold, y = distance.ref, color = run))+
@@ -47,9 +49,13 @@ plot_distance_metrics <- function(figure.dir,distance.file,thresholds.file,ref.s
   ggplot2::ggplot(run.distance.df, ggplot2::aes(x = catch.scalar, y = distance.ref))+
     ggplot2::geom_line()+
     ggplot2::geom_point()+
+    ggplot2::annotate('polygon',x = c(scale.min.thresh,scale.max.thresh,scale.max.thresh,scale.min.thresh),
+                     y = c(0,0,Inf,Inf),
+                     fill = 'lightblue', alpha = 0.5)+
+    ggplot2::annotate('text',x = scale.max.thresh+ 0.01, y = max(run.distance.df$distance.ref),hjust =0, label = 'EOF Threshold Range', color = 'black')+
     ggplot2::ylab('Distance from Reference Model State')+
     ggplot2::xlab('Catch Relative to Reference Model')+
-    ggplot2::geom_vline(xintercept = c(1,scale.close.thresh ),lty =c(1,2))+
+    ggplot2::geom_vline(xintercept = c(1),lty =c(1))+
     ggplot2::theme_bw()
   ggplot2::ggsave(filename = paste0(figure.dir,'/state_distance_rel_catch_scalar.png'),width = 12, height = 8, dpi = 300)
   
