@@ -25,7 +25,7 @@ ref.thresh =est_link_threshold(param.dir = param.dir,
                    year = c(2000,2010))
 range(ref.thresh$threshold, na.rm = TRUE)
 
-atlantiseof::make_reference_state(param.dir,atl.dir,group.index,fgs.file,dietSource,timeRange,out.name,desired.p)
+atlantiseof::make_reference_state(param.dir,atl.dir,group.index,fgs.file,dietSource,20:60,out.name,desired.p)
 atlantiseof::make_desired_state_distance(param.dir,atl.dir,dietSource,ref.state.file,data.dir,out.dir,run.prefix,setup.file)
 atlantiseof::plot_distance_metrics(figure.dir = here::here('figures','eof_thresholds_3',''),
                                    distance.file = 'D:/catch_thresholds_eof_3/output/catch_thresholds_eof_3_distance.rds',
