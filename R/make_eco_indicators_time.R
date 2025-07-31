@@ -94,9 +94,9 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
     if(!file.exists(paste0(atl.dir,new.diet.file))){
       atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  'neus_outputDetailedDietCheck.txt',outputname =   new.diet.file, cloud = cloud)  
     }
-    tl.df = atlantiseof::est_trophic_level_time(param.dir = param.dir, atl.dir = atl.dir, fgs = 'neus_groups.csv', detDietfile = new.diet.file,plottl = F,timeRange = NULL)$trophiclevel
-    tl.df = tl.df %>%
-      dplyr::left_join(groups, by = c('species' = 'Name'))%>%
+    tl.df.orig = atlantiseof::est_trophic_level_time(param.dir = param.dir, atl.dir = atl.dir, fgs = 'neus_groups.csv', detDietfile = new.diet.file,plottl = F,timeRange = NULL)$trophiclevel
+    tl.df = tl.df.orig %>%
+      dplyr::left_join(groups, by = c('species' = 'Name','Code'))%>%
       dplyr::select(year,Code,TL) %>%
       dplyr::mutate(year = year - start.year)%>% 
       dplyr::rename('trophicLevel' = 'TL')%>%

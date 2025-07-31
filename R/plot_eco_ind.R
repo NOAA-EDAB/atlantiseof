@@ -12,7 +12,7 @@
 #'
 #'
 
-eco.ind.file  = paste0(data.dir,'catch_thresholds_eof_3_run_eco_ind.rds')
+# eco.ind.file  = paste0(data.dir,'catch_thresholds_eof_3_run_eco_ind.rds')
 
 plot_distance_metrics <- function(figure.dir,eco.ind.file,setup.file,thresholds.file) {
 
