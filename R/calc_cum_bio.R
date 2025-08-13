@@ -3,7 +3,7 @@
 #'@param biomass.df dataframe. Biomass dataframe with the biomass of each group (species x year x biomass) returned from est_biomass_time
 #'@param tl.df dataframe. Trophic level dataframe with the trophic levels of each group (species x year x TL) returned from est_trophic_level_time
 #'@param show.plot logical. whether it should return plots as well as data
-#'@param out.dir = 'D:/catch_thresholds_eof_3/output/'
+#'@param out.dir string. Output directory to save the results
 #'
 #'@return dataframe of steepness, biomass at inflection, and trophic level at inflection for each year, as well as fitted parameters
 #'
