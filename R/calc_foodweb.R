@@ -17,111 +17,6 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
   
   # tictoc::tic()
   
-  # Function to calculate trophic levels using TrophInd and correcting for basal species
-  calculate_trophic_levels_corrected <- function(adj_matrix, basal_species) {
-    # all_species <- rownames(adj_matrix)
-    # tl <- NetIndices::TrophInd(adj_matrix)$TL
-    
-    tl_corrected <- solve(diag(nrow(adj_matrix)) - t(adj_matrix), rep(1, nrow(adj_matrix)))
-    
-    # Manually set the trophic level of known basal species to 1
-    tl_corrected[basal_species] <- 1
-    
-    return(tl_corrected)
-  }
-  
-  # Function to calculate trophic coherence
-  calculate_coherence <- function(adj_matrix, trophic_levels) {
-    valid_tl <- trophic_levels[!is.na(trophic_levels)]
-    if (length(valid_tl) == 0) return(NA)
-    adj_matrix_valid <- adj_matrix[names(valid_tl), names(valid_tl), drop = FALSE]
-    var_T <- var(valid_tl, na.rm = TRUE)
-    if (is.na(var_T) || var_T == 0) return(NA)
-    var_prey_T <- apply(adj_matrix_valid, 2, function(pred_col) {
-      prey_tl <- valid_tl[pred_col > 0]
-      if (length(prey_tl) > 0) {
-        return(var(prey_tl, na.rm = TRUE))
-      } else {
-        return(0)
-      }
-    })
-    sum_var_prey_T <- sum(var_prey_T, na.rm = TRUE)
-    S <- length(valid_tl)
-    coherence <- 1 - (sum_var_prey_T / (S * var_T))
-    return(max(0, min(1, coherence)))
-  }
-  
-  #Function to calculate the average Jaccard similarity
-  calculate_avg_jaccard <- function(g) {
-    predators <- igraph::V(g)[igraph::degree(g, mode = "out") > 0] # Predators are nodes with outgoing links to prey
-    num_predators <- length(predators)
-    
-    if (num_predators < 2) {
-      return(NA) # Cannot calculate if there are fewer than 2 predators
-    }
-    
-    # Get a binary matrix where rows are predators and columns are prey
-    adj_matrix <- igraph::as_adjacency_matrix(g, sparse = FALSE, type = "both")
-    
-    # Ensure the matrix has correct dimensions before transposing
-    if (nrow(adj_matrix) != ncol(adj_matrix)) {
-      stop("Adjacency matrix is not square.")
-    }
-    
-    # Transpose to get prey as rows and predators as columns, then subset for predators
-    prey_pred_matrix <- adj_matrix[names(igraph::V(g))[igraph::degree(g, mode="in") > 0], names(igraph::V(g))[igraph::degree(g, mode="out") > 0]]
-    
-    # Calculate intersection sizes (A & B) using matrix multiplication
-    intersections <- prey_pred_matrix %*% t(prey_pred_matrix)
-    
-    # Calculate union sizes (A U B)
-    row_sums <- rowSums(prey_pred_matrix)
-    unions <- outer(row_sums, row_sums, `+`) - intersections
-    
-    # Calculate Jaccard similarity for all pairs
-    jaccard_matrix <- intersections / unions
-    
-    # Extract the upper triangle (excluding the diagonal) and compute the mean
-    jaccard_scores <- jaccard_matrix[upper.tri(jaccard_matrix)]
-    
-    return(mean(jaccard_scores, na.rm = TRUE))
-  }
-  
-  # Optimized function to calculate resilience from the dominant eigenvalue
-  calculate_resilience <- function(flow_matrix) {
-    num_species <- nrow(flow_matrix)
-    
-    if (num_species < 2) {
-      return(NA)
-    }
-    
-    # Get interaction strengths from the flow matrix (predator on prey effect)
-    # Normalize by the max flow to keep values within a reasonable range
-    interaction_strength <- flow_matrix / (max(flow_matrix, na.rm = TRUE) + 1e-9)
-    
-    # Create a community matrix
-    community_matrix <- matrix(0, nrow = num_species, ncol = num_species, dimnames = dimnames(flow_matrix))
-    
-    # Off-diagonal elements:
-    # effect of i on j = strength from j to i (as i is prey for j)
-    # effect of j on i = -strength from i to j (as j is predator on i)
-    
-    # Populate the matrix in a vectorized way
-    community_matrix[interaction_strength > 0] <- -interaction_strength[interaction_strength > 0]
-    community_matrix[t(interaction_strength) > 0] <- t(interaction_strength)[t(interaction_strength) > 0]
-    
-    # Diagonal elements: assume constant self-regulation
-    diag(community_matrix) <- -1
-    
-    # Compute eigenvalues
-    eigenvalues <- eigen(community_matrix)$values
-    
-    # Get the dominant eigenvalue (largest real part)
-    dominant_eigenvalue <- max(Re(eigenvalues))
-    
-    return(dominant_eigenvalue)
-  }
-  
   #Read functional groups file
   fgs = read.csv(fgs.file) |> 
     dplyr::select(Code, Name, LongName, GroupType)
@@ -197,34 +92,35 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
     # We use the unique predator_node to account for age.
     # The 'prop.consumption' is used as an edge weight.
     g_prop <- igraph::graph_from_data_frame(d = df_subset[, c("prey_node", "predator_node", "prop.consumption")], directed = TRUE)
+    g_undirected = igraph::as_undirected(g_prop, mode = "collapse", edge.attr.comb = 'sum')
     g_consumed = igraph::graph_from_data_frame(d = df_subset[, c("prey_node", "predator_node", "consumption")],directed = TRUE)
-    g_undirected = igraph::as_undirected(g_consumed, mode = "collapse", edge.attr.comb = 'sum')
     
-    g_membership_undirected = igraph::cluster_louvain(g_undirected, weights = igraph::E(g_undirected)$consumption)
-    g_membership_directed = igraph::cluster_infomap(g_consumed, e.weights = igraph::E(g_consumed)$consumption)
+    
+    g_membership_undirected = igraph::cluster_louvain(g_undirected, weights = igraph::E(g_undirected)$prop.consumption)
+    g_membership_directed = igraph::cluster_infomap(g_prop, e.weights = igraph::E(g_prop)$prop.consumption)
 
     # Connectance: The number of links (L) divided by the maximum possible links (S^2)
-    num_species <- igraph::vcount(g)
-    num_links <- igraph::ecount(g)
+    num_species <- igraph::vcount(g_consumed)
+    num_links <- igraph::ecount(g_consumed)
     connectance <- num_links / (num_species^2)
     
     # Centrality: Measure of species' influence.
     # We calculate the mean values for the network time-series summary.
-    mean_in_degree <- mean(igraph::degree(g, mode = "in")) # Average number of prey_node a species has
-    mean_out_degree <- mean(igraph::degree(g, mode = "out")) # Average number of predators a species has
-    mean_betweenness <- mean(igraph::betweenness(g)) # Average number of shortest paths passing through a species
+    mean_in_degree <- mean(igraph::degree(g_consumed, mode = "in")) # Average number of prey_node a species has
+    mean_out_degree <- mean(igraph::degree(g_consumed, mode = "out")) # Average number of predators a species has
+    mean_betweenness <- mean(igraph::betweenness(g_prop)) # Average number of shortest paths passing through a species
     
     # New metric: Network Betweenness Centralization
-    network_betweenness_centralization <- igraph::centr_betw(g)$centralization
+    network_betweenness_centralization <- igraph::centr_betw(g_prop)$centralization
     
     # Modularity: Measures the extent to which the network is partitioned into communities
     modularity_undirected <- igraph::modularity(g_undirected, igraph::membership(g_membership_undirected))
-    modularity_directed <- igraph::modularity(g_consumed, igraph::membership(g_membership_directed))
+    modularity_directed <- igraph::modularity(g_prop, igraph::membership(g_membership_directed))
     
     # Redundancy: A proxy for this is the inverse of the standard deviation of in-degrees.
     # A lower standard deviation suggests a more even distribution of prey_node, indicating
     # higher redundancy. We use a proxy here as a direct redundancy index is complex.
-    in_degrees <- igraph::degree(g, mode = "in")
+    in_degrees <- igraph::degree(g_consumed, mode = "in")
     redundancy_proxy <- 1 / (sd(in_degrees) + 1e-6) # Added small value to avoid division by zero
     
     # print(paste0(t,'-simple metrics'))
@@ -255,14 +151,14 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
     # Use the custom function to calculate coherence
     all_species_in_time_step <- unique(c(as.character(df_subset$prey_node), as.character(df_subset$predator_node)))
     basal_species_for_current_time <- intersect(basal_species_list, all_species_in_time_step)
-    trophic_levels <- calculate_trophic_levels_corrected(flow_matrix, basal_species = basal_species_for_current_time)
-    coherence_val <- calculate_coherence(flow_matrix, trophic_levels)
+    trophic_levels <- atlantiseof::calculate_trophic_levels_corrected(flow_matrix, basal_species = basal_species_for_current_time)
+    coherence_val <- atlantiseof::calculate_coherence(flow_matrix, trophic_levels)
     
     # print(paste0(t,'-coherence metrics'))
     # New metric: Average Jaccard Similarity
-    avg_jaccard_similarity <- calculate_avg_jaccard(g)
+    avg_jaccard_similarity <- atlantiseof::calculate_avg_jaccard(g_consumed)
     
-    resilience_eigenvalue <- tryCatch(calculate_resilience(flow_matrix), error = function(e) NA)
+    resilience_eigenvalue <- tryCatch(atlantiseof::calculate_resilience(flow_matrix), error = function(e) NA)
     
     # print(paste0(t,'-jaccard metrics'))
     # Store all results for the current time point
@@ -483,7 +379,7 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
     metric_slope = metric_summary_df,
     ecoystem_status = ecosystem_status_summary$ecosystem_status,
     food_web_df = food_web_df,
-    energy_flow_df = g,
+    energy_flow_df = g_consumed,
     metric_ts = final_df
   )
   

@@ -12,7 +12,8 @@ make_eco_indicators_time(
   dietSource,
   timeRange,
   start.year = 1964,
-  cloud = F
+  cloud = F,
+  ref.run.dir = NULL
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ make_eco_indicators_time(
 \item{start.year}{Numeric. Year to start the time series. Default = 1964}
 
 \item{cloud}{Logical. If TRUE, run on cloud Default is FALSE.}
+
+\item{ref.run.dir}{Character String. Path to reference run directory. If NULL, no divergence metrics are calculated.}
 }
 \value{
 dataframe of ecological indicators over time

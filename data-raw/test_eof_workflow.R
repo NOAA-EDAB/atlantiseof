@@ -1,6 +1,7 @@
 
 param.dir = 'C:/Users/joseph.caracappa/Documents/GitHub/neus-atlantis/currentVersion/'
 atl.dir = 'C:/Users/joseph.caracappa/Documents/Data/base_run_eof/'
+ref.run.dir = atl.dir
 group.index = here::here('data-raw','neus_species_index.csv')
 fgs.file  = 'C:/Users/joseph.caracappa/Documents/GitHub/neus-atlantis/currentVersion/neus_groups.csv'
 dietSource = 'detdiet'

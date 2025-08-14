@@ -1,8 +1,7 @@
 #' @description Calculates the compositional divergence metrics from atlantis output
 #'
-#'@param atl.dir string. Atlantis output directory with the biomass of each group (species x year x biomass) returned from est_biomass_time
-#'@param fgs.file string. Atlantis functional groups file
-#'@param ref.prop dataframe. Reference proportion dataframe with the reference proportions of each group (species x year x prop) returned from est_ref_prop_time
+#'@param bio.df dataframe. Atlantis biomass output dataframe with columns: Time, Code, Biomass
+#'@param ref.prop dataframe. Reference proportion dataframe with the reference proportions of each group (species x prop) returned from calc_ref_prop
 #'@param show.plot logical. whether it should return plots as well as data
 #'
 #'@return dataframe of divergence metrics over time 
@@ -12,7 +11,7 @@
 # ref.prop = rep(1/89,89)
 # ref.prop = bio.prop.mat[1,]
 
-calc_divergence = function(biomass.df, ref.prop, show.plot){
+calc_divergence = function(bio.df, ref.prop, show.plot = F){
   
   #utility functions
   calculate_KL_divergence = function(reference, comparison){
@@ -71,10 +70,13 @@ calc_divergence = function(biomass.df, ref.prop, show.plot){
   bio.prop.mat[is.na(bio.prop.mat)] <- 1E-12
   bio.prop.mat[bio.prop.mat == 0] <- 1E-12 # Avoid division by zero
   
+  # reorder the ref.prop so that it matches the order of bio.prop.mat species columns
+  ref.prop.ordered = ref.prop$biomass.prop[match(colnames(bio.prop.mat), ref.prop$Code)]
+  
   # Calculate the divergence metrics
-  kl_divergence = apply(bio.prop.mat, 1, function(x) calculate_KL_divergence(ref.prop, x))
-  js_divergence = apply(bio.prop.mat, 1, function(x) calculate_JS_divergence(ref.prop, x))
-  jeffreys_divergence = apply(bio.prop.mat, 1, function(x) calculate_Jeffreys_divergence(ref.prop, x))
+  kl_divergence = apply(bio.prop.mat, 1, function(x) calculate_KL_divergence(ref.prop.ordered, x))
+  js_divergence = apply(bio.prop.mat, 1, function(x) calculate_JS_divergence(ref.prop.ordered, x))
+  jeffreys_divergence = apply(bio.prop.mat, 1, function(x) calculate_Jeffreys_divergence(ref.prop.ordered, x))
    
   out.df = data.frame(
     Time = bio.time,

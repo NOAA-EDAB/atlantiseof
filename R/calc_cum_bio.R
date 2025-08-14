@@ -159,4 +159,6 @@ calc_cum_bio = function(bio.df,tl.df,show.plot=F,out.dir){
   # plot(bio_inf~tl_inf,out.df)
   # plot(steep~tl_inf,out.df)
   
+  return(out.df)
+  
 }

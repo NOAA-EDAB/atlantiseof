@@ -4,7 +4,7 @@
 \alias{get_diet_prop}
 \title{Retreives diet proportions from parameter files}
 \usage{
-get_diet_prop(param.dir, atl.dir, fgs, detDietfile = F, plottl = F, dietSource)
+get_diet_prop(param.dir, atl.dir, fgs, dietFile, plottl = F, dietSource)
 }
 \arguments{
 \item{param.dir}{Character String. Path to Parameter directory}
@@ -13,11 +13,11 @@ get_diet_prop(param.dir, atl.dir, fgs, detDietfile = F, plottl = F, dietSource)
 
 \item{fgs}{Character String. Name of groups.csv file}
 
-\item{detDietfile}{Character String. Name of processed zipped detailed diet file}
+\item{dietFile}{Character String. Name of processed zipped detailed diet file}
 
 \item{plottl}{Boolean. Plot the Trophic level to window. Default = F}
 
-\item{dietSource}{string. Source of diet matrix, either 'realized' or 'prm'. Default is 'prm'.}
+\item{dietSource}{string. Source of diet matrix, either 'diet', 'detdiet' or 'prm'. Default is 'prm'.}
 }
 \value{
 dataframe

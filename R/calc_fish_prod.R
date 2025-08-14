@@ -2,11 +2,12 @@
 #'
 #'@param param.dir Character String. Path to Parameter directory
 #'@param atl.dir Character String. Path to output directory
-#'@param survdat dataframe. Returned from survdat::get_survdat() 
+#'@param survdat Dataframe. Survey data with columns: Code, AGE, LENGTH
 #'@param out.dir character string. Path to output file
 #'@param show.plot logical. If TRUE, will plot the results
 #'@param timeRange numeric vector. Time range to filter the data (e.g., c(1980, 2020)). If NULL, uses all available data.
 #'
+#'@export
 
 # param.dir = '/home/jcaracappa/NEUS-Atlantis/Joe_Proj/currentVersion/'
 # atl.dir = '/home/jcaracappa/EDAB_Dev/jcaracappa/base_run_eof/'
@@ -15,10 +16,10 @@
 # show.plot = T
 # timeRange = 30:60
 
-calc_fish_prod = function(param.dir, atl.dir, survdat, out.dir, show.plot = FALSE, timeRange) {
+calc_fish_prod = function(param.dir, atl.dir, out.dir, survdat, show.plot = FALSE, timeRange) {
   
   #Read functional groups file
-  param.ls = atlantisprocessing::get_atl_paramfiles(param.dir = param.dir, atl.dir = atl.dir, run.prefix = 'neus_output',include_catch = T)
+  param.ls = atlantisdiagnostics::get_atl_paramfiles(param.dir = param.dir, atl.dir = atl.dir, run.prefix = 'neus_output',include_catch = T)
   
   fgs = read.csv(param.ls$groups.file) |> dplyr::select('Code','LongName','NumAgeClassSize')
   
@@ -39,14 +40,14 @@ calc_fish_prod = function(param.dir, atl.dir, survdat, out.dir, show.plot = FALS
   #find mean size of age1 species to define "small fish"
   survdat.juv = survdat |>
    dplyr::filter(!is.na(AGE) & !is.na(LENGTH)) |>
-   dplyr::filter(AGE == 1) |> 
+   dplyr::filter(AGE == 1) |>
    dplyr::group_by(Code) |>
    dplyr::summarise(length.small = mean(LENGTH, na.rm = TRUE), .groups = 'drop')
   
   #Read in Atlantis lengths from atlantisprocessing post-processing
  length.file = paste0(atl.dir,'Post_Processed/Data/length_age.rds')
  if(!file.exists(length.file)){
-   atlantisprocessing::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.length.age = T)
+   atlantisdiagnostics::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.length.age = T)
  }
  length.df = readRDS(length.file) |> 
    dplyr::rename(atl.length = 'atoutput')
@@ -54,7 +55,7 @@ calc_fish_prod = function(param.dir, atl.dir, survdat, out.dir, show.plot = FALS
  #Read in Atlantis abundance from atlantisprocessing post-processing
  num.file = paste0(atl.dir,'Post_Processed/Data/numbers_age.rds')
  if(!file.exists(num.file)){
-   atlantisprocessing::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.numbers.timeseries = T)
+   atlantisdiagnostics::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.numbers.timeseries = T)
  }
  num.df = readRDS(num.file) |> 
    dplyr::rename(atl.num = 'atoutput')
@@ -62,7 +63,7 @@ calc_fish_prod = function(param.dir, atl.dir, survdat, out.dir, show.plot = FALS
  #Read in Atlantis biomass from atlantisprocessing post-processing
  bio.file = paste0(atl.dir,'Post_Processed/Data/biomass_age.rds')
  if(!file.exists(bio.file)){
-   atlantisprocessing::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.biomass.timeseries = T)
+   atlantisdiagnostics::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.biomass.timeseries = T)
  }
  bio.df = readRDS(bio.file) |> 
    dplyr::rename(atl.bio = 'atoutput')
@@ -144,10 +145,17 @@ calc_fish_prod = function(param.dir, atl.dir, survdat, out.dir, show.plot = FALS
    ggplot2::ggsave(paste0(out.dir,'fish_productivity_anomaly.png'))
  }
 
- #Write out
- if(!dir.exists(dirname(out.dir))) {
-   dir.create(dirname(out.dir), recursive = TRUE)
+
+ 
+ if(!missing(out.dir)){
+   #Write out
+   if(!dir.exists(dirname(out.dir))) {
+     dir.create(dirname(out.dir), recursive = TRUE)
+   }
+   
+   saveRDS(out.df, file = paste0(out.dir, '/fish_prod.rds'))
  }
- saveRDS(out.df, file = paste0(out.dir, '/fish_prod.rds'))
+
+ return(out.df)
  
 }
