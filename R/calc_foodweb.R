@@ -15,12 +15,12 @@
 
 calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out.dir = NA){
   
-  tictoc::tic()
+  # tictoc::tic()
   
   # Function to calculate trophic levels using TrophInd and correcting for basal species
   calculate_trophic_levels_corrected <- function(adj_matrix, basal_species) {
-    all_species <- rownames(adj_matrix)
-    tl <- NetIndices::TrophInd(adj_matrix)$TL
+    # all_species <- rownames(adj_matrix)
+    # tl <- NetIndices::TrophInd(adj_matrix)$TL
     
     tl_corrected <- solve(diag(nrow(adj_matrix)) - t(adj_matrix), rep(1, nrow(adj_matrix)))
     
@@ -196,9 +196,13 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
     # The network is directed from prey_node to predator.
     # We use the unique predator_node to account for age.
     # The 'prop.consumption' is used as an edge weight.
-    g <- igraph::graph_from_data_frame(d = df_subset[, c("prey_node", "predator_node", "prop.consumption")], directed = TRUE)
-    g_undirected = igraph::as_undirected(g, mode = "collapse")
+    g_prop <- igraph::graph_from_data_frame(d = df_subset[, c("prey_node", "predator_node", "prop.consumption")], directed = TRUE)
+    g_consumed = igraph::graph_from_data_frame(d = df_subset[, c("prey_node", "predator_node", "consumption")],directed = TRUE)
+    g_undirected = igraph::as_undirected(g_consumed, mode = "collapse", edge.attr.comb = 'sum')
     
+    g_membership_undirected = igraph::cluster_louvain(g_undirected, weights = igraph::E(g_undirected)$consumption)
+    g_membership_directed = igraph::cluster_infomap(g_consumed, e.weights = igraph::E(g_consumed)$consumption)
+
     # Connectance: The number of links (L) divided by the maximum possible links (S^2)
     num_species <- igraph::vcount(g)
     num_links <- igraph::ecount(g)
@@ -214,7 +218,8 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
     network_betweenness_centralization <- igraph::centr_betw(g)$centralization
     
     # Modularity: Measures the extent to which the network is partitioned into communities
-    modularity_val <- igraph::modularity(g, igraph::membership(igraph::cluster_louvain(g_undirected)))
+    modularity_undirected <- igraph::modularity(g_undirected, igraph::membership(g_membership_undirected))
+    modularity_directed <- igraph::modularity(g_consumed, igraph::membership(g_membership_directed))
     
     # Redundancy: A proxy for this is the inverse of the standard deviation of in-degrees.
     # A lower standard deviation suggests a more even distribution of prey_node, indicating
@@ -244,6 +249,7 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
     ascendancy_val <- asc_results$Ascendency[1]
     capacity_val <- asc_results$Capacity[1]
     overhead_val <- asc_results$Overhead[1]
+    rel_ascendancy_val <- ascendancy_val / capacity_val
     
     # print(paste0(t,'-ascendancy metrics'))
     # Use the custom function to calculate coherence
@@ -267,13 +273,15 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
       mean_out_degree = mean_out_degree,
       mean_betweenness = mean_betweenness,
       network_betweenness_centralization = network_betweenness_centralization,
-      modularity = modularity_val,
+      modularity_directed = modularity_directed,
+      modularity_undirected = modularity_undirected,
       redundancy_proxy = redundancy_proxy,
       avg_jaccard_similarity = avg_jaccard_similarity,
       ascendancy = ascendancy_val,
       capacity = capacity_val,
       coherence = coherence_val,
       overhead = overhead_val, 
+      rel_ascendancy = rel_ascendancy_val,
       resilience_eigenvalue = resilience_eigenvalue
     )
     print(t)
@@ -479,7 +487,7 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
     metric_ts = final_df
   )
   
-  tictoc::toc() 
+  # tictoc::toc() 
   return(out.ls)
   
 }
