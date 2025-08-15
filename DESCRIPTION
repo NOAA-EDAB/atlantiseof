@@ -26,10 +26,12 @@ Imports:
     atlantisom,
     atlantistools,
     ecodata,
-    stocksmart
+    stocksmart,
+    NEFSCspatial
 Remotes:
     NOAA-EDAB/atlantisdiagnostics,
     NOAA-EDAB/stocksmart,
     r4atlantis/atlantisom,
     Atlantis-Ecosystem-Model/atlantistools,
     NOAA-EDAB/ecodata
+    NEFSCspatial=NEFSC/NEFSC-Spatial
