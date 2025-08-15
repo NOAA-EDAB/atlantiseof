@@ -22,15 +22,16 @@ Imports:
     rbgm,
     tibble,
     tidyr,
-    sf,
-    NEFSCspatial,
     atlantisdiagnostics,
     atlantisom,
     atlantistools,
-    ecodata
+    ecodata,
+    stocksmart,
+    NEFSCspatial
 Remotes:
-    NEFSCspatial=NEFSC/NEFSC-Spatial,
     NOAA-EDAB/atlantisdiagnostics,
-    NOAA-EDAB/ecodata,
+    NOAA-EDAB/stocksmart,
     r4atlantis/atlantisom,
-    Atlantis-Ecosystem-Model/atlantistools
+    Atlantis-Ecosystem-Model/atlantistools,
+    NOAA-EDAB/ecodata,
+    NEFSCspatial=NEFSC/NEFSC-Spatial

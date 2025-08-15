@@ -199,7 +199,8 @@ for(i in 1:nrow(sim.results) ){
 
 #Combined tests
 sim.results = sim.results %>%
-  mutate(pass.all = ifelse(eco.biomass.test == 0 & spp.biomass.test == 0 & fleet.rev.test == 0 & fleet.consolidate.test == 0, 1, 0))
+  mutate(pass.all = ifelse(eco.biomass.test == 0 & spp.biomass.test == 0 & fleet.rev.test == 0 & fleet.consolidate.test == 0, 1, 0),
+         pass.score = eco.biomass.test + spp.biomass.test + fleet.rev.test + fleet.consolidate.test)
 
 #make 3D surface  plot of revenue.tot as a function of EOL.prop and targeting.level
 
@@ -260,6 +261,14 @@ plot_ly(sim.results, x = ~EOL.prop, y = ~targeting.level, z = ~revenue.tot,
                       zaxis = list(title = "Total Revenue")),
          title = 'Fleet Consolidation Test')
 
+#Pass All Tests 
+plot_ly(sim.results, x = ~EOL.prop, y = ~targeting.level, z = ~revenue.tot,
+        type = "scatter3d", mode = "markers",
+        marker = list(size = 5, color = ~pass.score, colorscale = 'viridis', opacity = 1)) %>%
+  layout(scene = list(xaxis = list(title = "EOL Prop"),
+                      yaxis = list(title = "Targeting Level"),
+                      zaxis = list(title = "Total Revenue")),
+         title = 'Fleet Consolidation Test') 
 
 
 

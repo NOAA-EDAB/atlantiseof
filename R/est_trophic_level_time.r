@@ -39,8 +39,8 @@ est_trophic_level_time <- function(param.dir = "C:/Users/andrew.beet/Documents/m
   #Total consumption reported. flagdietcheck = 1
   dietmat <- atlantisom::load_detailed_diet_comp(dir = atl.dir,
                                                  file_diet = detDietfile,
-                                                 fgs = fgs) %>%
-    dplyr::filter(time.days < 19711) # 2017
+                                                 fgs = fgs)
+    # dplyr::filter(time.days < 19711) # 2017
 
   # TL over space, time, all age classes
   # average consumption per time step is calculated
@@ -119,7 +119,9 @@ est_trophic_level_time <- function(param.dir = "C:/Users/andrew.beet/Documents/m
     dplyr::mutate(species = names(TLi)) %>%
     dplyr::relocate(species) %>%
     tidyr::pivot_longer(.,cols=-species,names_to = "year",values_to = "TL") %>%
-    dplyr::mutate(year = as.numeric(year))
+    dplyr::mutate(year = as.numeric(year)) %>%
+    dplyr::left_join(fgs, by = c('species' = 'Name')) |> 
+    dplyr::select(species,Code,year,TL)
 
   # plot TL change over time
 

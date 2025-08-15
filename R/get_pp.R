@@ -61,7 +61,6 @@ get_pp <- function(bgm, pathToForcing) {
       # So box 0 is index 1 in nc file
 
       # aggregate the data to get estimate of mean PP for the year
-      # 1st dimension = layer.
       # bottommost layer = 1. Thus is a box has 5 layers, layer 5 is surface,
       # if box has 2 layers, layer 2 is surface
       # mg N m^{-3}

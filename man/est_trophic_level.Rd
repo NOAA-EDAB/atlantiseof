@@ -9,7 +9,7 @@ est_trophic_level(
     "C:/Users/andrew.beet/Documents/myWork/githubRepos/neus-atlantis/currentVersion",
   atl.dir = here::here("other/dev_3a75e57d1"),
   fgs = "neus_groups.csv",
-  detDietfile = "DetDiet2.gz",
+  detDietfile = "neus_ouputDetDiet_Processed.gz",
   plottl = F
 )
 }
