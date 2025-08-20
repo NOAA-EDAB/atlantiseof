@@ -125,7 +125,7 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
   
   
   #Calculate cumulative biomass indices
-  cum_bio = atlantiseof::calc_cum_bio(bio.df = bio.df, 
+  cum.bio = atlantiseof::calc_cum_bio(bio.df = bio.df, 
                             tl.df = tl.df, 
                             show.plot = F)
   
@@ -138,23 +138,39 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
   
   #Calculate divergence metrics
   if(is.null(ref.run.dir)){
-    ref.prop = rep(1/length(unique(bio.df$Code)), length(unique(bio.df$Code)))
+    ref.prop = data.frame(Code = bio.df$Code, biomass.prop =  rep(1/length(unique(bio.df$Code)), length(unique(bio.df$Code))))
   }else{
     ref.prop = atlantiseof::calc_bio_prop(ref.run.dir,fgs.file = fgs.file, timeRange = 30:80)
   }
-  diverge = calc_divergence(bio.df = bio.df, ref.prop = ref.prop, show.plot =F)  
+  diverge = atlantiseof::calc_divergence(bio.df = bio.df, ref.prop = ref.prop, show.plot =F)  |> 
+    dplyr::mutate(year = floor(Time/365)) |> 
+    dplyr::filter(year %in% timeRange) |>
+    dplyr::group_by(year) |> 
+    dplyr::summarise(
+      KL_divergence = mean(KL_divergence, na.rm = TRUE),
+      JS_divergence = mean(JS_divergence, na.rm = TRUE),
+      Jeffreys_divergence = mean(Jeffreys_divergence, na.rm = TRUE)
+    )
   
   #Calculate foodweb metrics
   foodweb = atlantiseof::calc_foodweb(atl.dir = atl.dir,
                                       dietSource = dietSource,
-                                      show.plot = F)
-  
-  
+                                      show.plot = F,
+                                      out.dir = atl.dir)
+  foodweb = foodweb$metric_ts |> 
+    dplyr::mutate(year = floor(time/365)) |> 
+    dplyr::filter(year %in% timeRange) |>
+    dplyr::select(-time) |> 
+    dplyr::group_by(year) |> 
+    dplyr::summarise(dplyr::across(dplyr::everything(), mean,.names = "{.col}",na.rm=T))
+    
+    
+    
   
   eco.df = eco.df |> 
     dplyr::left_join(mean.tl) |> 
     dplyr::left_join(cum.bio) |> 
-    dplyr::left_join(fish.prop) |> 
+    dplyr::left_join(fish.prop, by = c('year' = 'year.ref')) |> 
     dplyr::left_join(diverge) |>
     dplyr::left_join(foodweb)
   

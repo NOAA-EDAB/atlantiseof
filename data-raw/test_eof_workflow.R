@@ -8,6 +8,7 @@ dietSource = 'detdiet'
 timeRange = 30:52
 out.name = 'ref_'
 desired.p = c(0.025,0.975)
+start.year = 1964
 
 figure.dir = here::here('figures')
 ref.state.file = here::here('data-raw','ref_eco_state.rds')

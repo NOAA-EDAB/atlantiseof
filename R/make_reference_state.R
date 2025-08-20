@@ -1,3 +1,4 @@
+
 # Calculates ecosystem indicators from a reference run and converts them to a desired state based on quantiles of timeseries
 #'
 #'
@@ -20,14 +21,14 @@ make_reference_state = function(param.dir, atl.dir, group.index, fgs.file,
                                 dietSource, timeRange, cloud = FALSE, desired.p = c(0.25,0.75)) {
   
   # Get mean status from reference run
-  eco.ind = atlantiseof::make_eco_indicators(
-    param.dir = param.dir,
-    atl.dir = atl.dir,
-    group.index = group.index,
-    fgs.file = fgs.file,
-    dietSource = dietSource,
-    timeRange = timeRange
-  )
+  # eco.ind = atlantiseof::make_eco_indicators(
+  #   param.dir = param.dir,
+  #   atl.dir = atl.dir,
+  #   group.index = group.index,
+  #   fgs.file = fgs.file,
+  #   dietSource = dietSource,
+  #   timeRange = timeRange
+  # )
   
   # Get time series indicators from reference run
   eco.ind.year = atlantiseof::make_eco_indicators_time(
@@ -36,20 +37,28 @@ make_reference_state = function(param.dir, atl.dir, group.index, fgs.file,
     group.index = group.index,
     fgs.file = fgs.file,
     dietSource = dietSource,
-    timeRange = timeRange
+    timeRange = 1:100
   )
+  
+  eco.ind = eco.ind.year |> 
+    dplyr::filter(year %in% timeRange) |>  
+    tidyr::pivot_longer(cols = -year, names_to = "Variable", values_to = "Value") |>
+    dplyr::group_by(Variable) |> 
+    dplyr::summarise(Value = mean(Value,na.rm=T))
+    
+    
   saveRDS(eco.ind.year, here::here('data-raw',paste0(out.name,'eco_state_year.rds')))
   #Calculate summary statistics on annual eco indicators and desired min/max based on quantiles
-  summary.base.state = eco.ind.year %>%
-    tidyr::gather(Variable,Value,-year)%>%
-    dplyr::group_by(Variable)%>%
+  summary.base.state = eco.ind.year |>
+    tidyr::gather(Variable,Value,-year)|>
+    dplyr::group_by(Variable)|>
     dplyr::summarise(mean.value = mean(Value[is.finite(Value)], na.rm = TRUE),
                      median.value = median(Value[is.finite(Value)], na.rm = TRUE),
                      sd.value = sd(Value[is.finite(Value)]),
                      abs.min.value = min(Value[is.finite(Value)], na.rm = TRUE),
                      abs.max.value = max(Value[is.finite(Value)], na.rm = TRUE),
                      desired.min = quantile(Value[is.finite(Value)], desired.p[1], na.rm = TRUE),
-                     desired.max = quantile(Value[is.finite(Value)], desired.p[2], na.rm = TRUE))%>%
+                     desired.max = quantile(Value[is.finite(Value)], desired.p[2], na.rm = TRUE))|>
     dplyr::mutate(desired.min.scaled = (desired.min-abs.min.value)/(abs.max.value - abs.min.value),
                   desired.max.scaled = (desired.max-abs.min.value)/(abs.max.value - abs.min.value),
                   desired.center = (desired.min.scaled + desired.max.scaled)/2,

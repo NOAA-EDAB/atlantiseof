@@ -254,7 +254,7 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
     })
     
     # Rest of the logic (stable, increasing, decreasing) remains the same
-    if (sd(values, na.rm = TRUE) / mean(values, na.rm = TRUE) < 0.1) {
+    if (sd(values, na.rm = TRUE) / (mean(values, na.rm = TRUE)+1E-12) < 0.1) {
       return("Stable")
     }
     model <- lm(values ~ time)
@@ -284,24 +284,24 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
         (statuses$resilience_eigenvalue == "Increasing" || statuses$resilience_eigenvalue == "Stable")) {
       return("Shrinking but Streamlined")
     }
-    if (statuses$connectance == "Increasing" && (statuses$coherence == "Decreasing" || statuses$coherence == "Low") && (statuses$modularity == "Decreasing" || statuses$modularity == "Low")) {
+    if (statuses$connectance == "Increasing" && (statuses$coherence == "Decreasing" || statuses$coherence == "Low") && (statuses$modularity_directed == "Decreasing" || statuses$modularity_directed == "Low")) {
       return("Growing but Disorganized")
     }
     if ((statuses$connectance == "Increasing" || statuses$connectance == "Increasing Sharply") &&
         (statuses$ascendancy == "Increasing" || statuses$ascendancy == "Increasing Sharply") &&
-        (statuses$modularity == "Increasing" || statuses$modularity == "Stable") &&
+        (statuses$modularity_directed == "Increasing" || statuses$modularity_directed == "Stable") &&
         (statuses$resilience_eigenvalue == "Decreasing" || statuses$resilience_eigenvalue == "Stable")) {
       return("Developing & Resilient")
     }
-    if (statuses$connectance == "Stable" && statuses$modularity == "Stable" && statuses$ascendancy == "Increasing" &&
+    if (statuses$connectance == "Stable" && statuses$modularity_directed == "Stable" && statuses$ascendancy == "Increasing" &&
         (statuses$resilience_eigenvalue == "Decreasing" || statuses$resilience_eigenvalue == "Stable")) {
       return("Mature & Productive")
     }
-    if (statuses$connectance == "Stable" && (statuses$modularity == "Decreasing" || statuses$modularity == "Stable") && statuses$overhead == "Decreasing" &&
+    if (statuses$connectance == "Stable" && (statuses$modularity_directed == "Decreasing" || statuses$modularity_directed == "Stable") && statuses$overhead == "Decreasing" &&
         (statuses$resilience_eigenvalue == "Stable" || statuses$resilience_eigenvalue == "Increasing")) {
       return("Stressed & Vulnerable")
     }
-    if (statuses$connectance == "Stable" && statuses$ascendancy == "Stable" && statuses$modularity == "Stable" && statuses$resilience_eigenvalue == "Stable") {
+    if (statuses$connectance == "Stable" && statuses$ascendancy == "Stable" && statuses$modularity_directed == "Stable" && statuses$resilience_eigenvalue == "Stable") {
       return("Mature & Stable")
     }
     if (any(statuses == "Oscillating")) {
@@ -314,6 +314,7 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
   data_timerange = dplyr::filter(final_df,(time/365) %in% timeRange)
   metric_statuses <- sapply(names(data_timerange)[-1], function(col_name) {
     get_metric_status(data_timerange[[col_name]], data_timerange$time, col_name)
+    # print(col_name)
   })
   
   # Convert the results to a data frame
