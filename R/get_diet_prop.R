@@ -17,7 +17,7 @@
 #'@export
 
 
-get_diet_prop = function(param.dir,atl.dir,fgs,dietFile,plottl = F, dietSource){
+get_diet_prop = function(param.dir,atl.dir,fgs,dietFile = NA,plottl = F, dietSource){
   
   speciesnames <- atlantistools::load_fgs(fgs)  |> 
     dplyr::select(Code,Name)
@@ -83,11 +83,11 @@ get_diet_prop = function(param.dir,atl.dir,fgs,dietFile,plottl = F, dietSource){
     
     new.diet.file = 'neus_outputDetDiet_processed.gz'
     if(!file.exists(paste0(atl.dir,new.diet.file))){
-      atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  'neus_outputDetailedDietCheck.txt',outputname =   new.diet.file, cloud = cloud)  
+      atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  diet.file,outputname =   new.diet.file, cloud = cloud)  
     }
     
     dietmat <- atlantisom::load_detailed_diet_comp(dir = atl.dir,
-                                                   file_diet = dietFile,
+                                                   file_diet = new.diet.file,
                                                    fgs = read.csv(fgs.file)) |> 
       dplyr::group_by(species,agecl,time.days,prey) |> 
       dplyr::summarize(consumption = sum(atoutput,na.rm=T))

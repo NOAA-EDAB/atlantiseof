@@ -8,6 +8,7 @@
 #'@param dietSource Character String. Whether to use realized diets (diet), detailedDiet (detdiet) or parameter files (param)
 #'@param timeRange Numeric vector. Range of years to summarize
 #'@param start.year Numeric. Year to start the time series. Default = 1964
+#'@param survdat.data datadrame of survdat length,age,weight data
 #'@param cloud Logical. If TRUE, run on cloud Default is FALSE.
 #'@param ref.run.dir Character String. Path to reference run directory. If NULL, no divergence metrics are calculated.
 #'
@@ -16,7 +17,7 @@
 #'@export
 
 
-make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietSource,timeRange,start.year = 1964,cloud = F, ref.run.dir = NULL){
+make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietSource,timeRange,start.year = 1964,cloud = F, ref.run.dir = NULL, survdat.data = NA){
   
   #Load the groups.csv file
   stock.ref = atlantiseof::get_bmsy_ss(fgs = fgs.file, default.bmsy.frac = 0.4) |>
@@ -130,10 +131,12 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
                             show.plot = F)
   
   #Calculate fish productivity
+
+  
   fish.prop = atlantiseof::calc_fish_prod(param.dir = param.dir,
                                           atl.dir =atl.dir,
                                           show.plot = FALSE,
-                                          survdat = readRDS(here::here('data-raw','survey_lenagewgt.rds')),
+                                          survdat = survdat.data,
                                           timeRange =timeRange)
   
   #Calculate divergence metrics

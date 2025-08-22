@@ -20,6 +20,7 @@
 # dietSource = 'realized'
 # timeRange = 30:52
 
+#Check for detailed diet
 get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
   
   #Get main.nc, prod.nc, and diet matrix
@@ -43,7 +44,8 @@ get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
   #filter diet to just primary producer prey
   diet = atlantiseof::get_diet_prop(param.dir = param.dir,
                                     atl.dir = atl.dir,
-                                    fgs = fgs,detDietfile = F,plottl = F, dietSource = dietSource) %>%
+                                    fgs = fgs,plottl = F,
+                                    dietSource = dietSource) %>%
     dplyr::filter(prey %in% phyto.spp & consumption > 0) %>%
     dplyr::left_join(dplyr::select(fgs.df,Code,Name,NumCohorts,NumAgeClassSize), by = c('pred' = 'Name')) %>%
     dplyr::left_join(age.mat, by = c('Code'= 'spp'))%>%
