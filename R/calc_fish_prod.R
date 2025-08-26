@@ -23,12 +23,13 @@ calc_fish_prod = function(param.dir, atl.dir, out.dir, survdat, show.plot = FALS
   
   fgs = read.csv(param.ls$groups.file) |> dplyr::select('Code','LongName','NumAgeClassSize')
   
+  
   #Get age at maturity
-  age.mat = get_age_mat(param.ls$biol.prm)|>
+  age.mat = atlantiseof::get_age_mat(param.ls$biol.prm)|>
     dplyr::mutate(age.mat = as.numeric(age.mat))
   
   #Get FSPB
-  spp.fspb = get_param_FSPB(param.ls$biol.prm) |>
+  spp.fspb = atlantiseof::get_param_FSPB(param.ls$biol.prm) |>
     dplyr::rename(Code = 'group') |>
     tidyr::pivot_longer(-Code,values_to = 'fspb') |>
     tidyr::separate(name, c('dud','agecl'),sep = '\\.')|>
@@ -45,7 +46,7 @@ calc_fish_prod = function(param.dir, atl.dir, out.dir, survdat, show.plot = FALS
    dplyr::summarise(length.small = mean(LENGTH, na.rm = TRUE), .groups = 'drop')
   
   #Read in Atlantis lengths from atlantisprocessing post-processing
- length.file = paste0(atl.dir,'Post_Processed/Data/length_age.rds')
+ length.file = list.files(path = atl.dir, pattern = 'length_age.rds', full.names =T, recursive =T)
  if(!file.exists(length.file)){
    atlantisdiagnostics::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.length.age = T)
  }
@@ -53,7 +54,7 @@ calc_fish_prod = function(param.dir, atl.dir, out.dir, survdat, show.plot = FALS
    dplyr::rename(atl.length = 'atoutput')
  
  #Read in Atlantis abundance from atlantisprocessing post-processing
- num.file = paste0(atl.dir,'Post_Processed/Data/numbers_age.rds')
+ num.file = list.files(path = atl.dir, pattern = 'numbers_age.rds', full.names =T, recursive =T)
  if(!file.exists(num.file)){
    atlantisdiagnostics::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.numbers.timeseries = T)
  }
@@ -61,7 +62,7 @@ calc_fish_prod = function(param.dir, atl.dir, out.dir, survdat, show.plot = FALS
    dplyr::rename(atl.num = 'atoutput')
  
  #Read in Atlantis biomass from atlantisprocessing post-processing
- bio.file = paste0(atl.dir,'Post_Processed/Data/biomass_age.rds')
+ bio.file = list.files(path = atl.dir, pattern = 'biomass_age.rds', full.names =T, recursive =T)
  if(!file.exists(bio.file)){
    atlantisdiagnostics::process_atl_output(param.dir= param.dir, atl.dir = atl.dir,run.prefix = 'neus_output',param.ls = param.ls, plot.biomass.timeseries = T)
  }

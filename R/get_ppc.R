@@ -7,7 +7,7 @@
 #'@param atl.dir Character String. Path to output directory
 #'@param fgs Character String. Name of groups.csv file
 #'@param timeRange Vector
-#'@param dietSource string. Source of diet matrix, either 'realized' or 'prm'. Default is 'prm'.
+#'@param dietSource string. Source of diet matrix, either 'diet','detDiet', or 'prm'. Default is 'prm'.
 #'@param plottl Boolean. Plot the Trophic level to window. Default = F
 #'
 #'@return data.frame
@@ -24,22 +24,39 @@
 get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
   
   #Get main.nc, prod.nc, and diet matrix
-  main.file = paste0(atl.dir, 'neus_output.nc')
-  prod.file = paste0(atl.dir,'neus_outputPROD.nc')
-  bio.file = paste0(param.dir,'at_biology.prm')
-  diet.file = paste0(atl.dir, 'neus_outputDietCheck.txt')
-  bgm.file = paste0(param.dir,'neus_tmerc_RM2.bgm')
-  
+  main.file <- list.files(path = atl.dir, pattern = "neus_output.nc", full.names = TRUE, recursive = TRUE)
+  prod.file <- list.files(path = atl.dir, pattern = "neus_outputPROD.nc", full.names = TRUE, recursive = TRUE)
+  bio.file <- list.files(path = param.dir, pattern = "at_biology.prm", full.names = TRUE, recursive = FALSE)
+  diet.file <- list.files(path = atl.dir, pattern = "neus_outputDietCheck.txt", full.names = TRUE, recursive = TRUE)
+  bgm.file <- list.files(path = param.dir, pattern = "neus_tmerc_RM2.bgm", full.names = TRUE, recursive = FALSE)
+  # main.file = paste0(atl.dir, 'neus_output.nc')
+  # prod.file = paste0(atl.dir,'neus_outputPROD.nc')
+  # bio.file = paste0(param.dir,'at_biology.prm')
+  # diet.file = paste0(atl.dir, 'neus_outputDietCheck.txt')
+  # bgm.file = paste0(param.dir,'neus_tmerc_RM2.bgm')
+  # 
   fgs.df = read.csv(fgs,as.is =T)
   
   #Define primary producers
   phyto.spp = fgs.df$Name[which(fgs.df$GroupType %in% c('LG_PHY','DINOFLAG','SM_PHY','SEAGRASS','MICROPHYTOBENTHOS','PHYTOBEN'))]
   
   #Define maturity age for species
-  source(url('https://raw.githubusercontent.com/NEFSC/READ-EDAB-neusAtlantis/refs/heads/master/R/Calibration_Tools/get_age_mat.R'))
-  age.mat = get_age_mat(bio.file = bio.file, write =F)
+  # # source(url('https://raw.githubusercontent.com/NEFSC/READ-EDAB-neusAtlantis/refs/heads/master/R/Calibration_Tools/get_age_mat.R'))
+  # temp_file <- tempfile(fileext = ".R")
+  # url <- 'https://raw.githubusercontent.com/NEFSC/READ-EDAB-neusAtlantis/refs/heads/master/R/Calibration_Tools/get_age_mat.R'
+  # 
+  # # Download the file, handling potential errors
+  # tryCatch({
+  #   download.file(url, destfile = temp_file)
+  #   source(temp_file)
+  # }, error = function(e) {
+  #   stop("Failed to download and source the script. Check your internet connection or the URL.", call. = FALSE)
+  # })
+  age.mat.df = atlantiseof::get_age_mat(bio.file = bio.file, write =F)
+  # print(age.mat.df)
   
   bgm =rbgm::bgmfile(bgm.file)$boxes
+  
 
   #filter diet to just primary producer prey
   diet = atlantiseof::get_diet_prop(param.dir = param.dir,
@@ -48,15 +65,19 @@ get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
                                     dietSource = dietSource) %>%
     dplyr::filter(prey %in% phyto.spp & consumption > 0) %>%
     dplyr::left_join(dplyr::select(fgs.df,Code,Name,NumCohorts,NumAgeClassSize), by = c('pred' = 'Name')) %>%
-    dplyr::left_join(age.mat, by = c('Code'= 'spp'))%>%
+    # dplyr::left_join(age.mat.df, by = c('Code'= 'spp'))%>%
+    dplyr::left_join(age.mat.df)%>%
+    dplyr::ungroup() %>%
     dplyr::mutate(age.mat = ifelse(is.na(age.mat),1,age.mat))
   
   
-  if(dietSource == 'realized'){
+  if(dietSource == 'detDiet'){
     diet =diet %>%
-      dplyr::mutate(pred_stanza = ifelse(age.mat > age.mat,2,1))%>%
+      dplyr::mutate(pred_stanza = ifelse(agecl > age.mat,2,1))%>%
       dplyr::select(time,pred,agecl,pred_stanza,prey,consumption, prop.consumption)%>%
-      dplyr::filter(time >= min(timeRange) & time <= max(timeRange))
+      dplyr::filter(time >= min(timeRange*365) & time <= max(timeRange*365))
+  }else{
+    diet = dplyr::mutate(diet,pred_stanza = 2)
   }
   
   grazer.spp = sort(unique(diet$pred))
@@ -77,14 +98,28 @@ get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
     this.grazer = grep(paste0('\\b',grazer.spp[i]),prod.eat.names,value =T)
     #pull ageclass from this.grazer that starts with grazer.pp and ends with _Eat
     this.agecl = as.numeric(unlist(regmatches(this.grazer,gregexpr("\\d{1,2}",this.grazer))))
-    this.grazer.mat = as.numeric(age.mat$age.mat[which(age.mat$spp == fgs.df$Code[which(fgs.df$Name == grazer.spp[i])])])
+    # this.grazer.mat = as.numeric(age.mat.df$age.mat[which(age.mat.df$spp == fgs.df$Code[which(fgs.df$Name == grazer.spp[i])])])
     
+    species_code <- fgs.df %>%
+      dplyr::filter(Name == grazer.spp[i]) %>%
+      dplyr::pull(Code)
+    
+    this.grazer.mat <- age.mat.df %>%
+      dplyr::filter(Code == species_code) %>%
+      dplyr::pull(age.mat) %>%
+      as.numeric()
+    
+    # print(paste0('this.grazer.mat ',this.grazer.mat))
     this.grazer.ls = list()
     for(j in 1:length(this.grazer)){
       
       #get data from each grazer variable
       this.grazer.diet = diet %>%
         dplyr::filter(pred == grazer.spp[i])
+      
+      if(nrow(this.grazer.diet) == 0){
+        next()
+      }
       this.grazer.data = colSums(ncdf4::ncvar_get(prod.nc, this.grazer[j])[,prod.time.match] * bgm$area * abs(bgm$botz) )
       
       if(length(this.agecl) == 0){
@@ -101,14 +136,22 @@ get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
                         agecl =1,
                         pred_stanza = 1,
           )
+        # print(this.grazer)
+        # print(paste0('consumed ',nrow(this.grazer.consumed)))
       }else{
+        
         this.grazer.stanza = ifelse(this.agecl[j] > this.grazer.mat,2,1)
+        # print(this.agecl[j])
+        # print(this.grazer.mat)
+        # print(this.grazer)
+        # print(paste0('stanza ',nrow(this.grazer.stanza)))
         this.grazer.diet = diet %>%
           dplyr::filter(pred == grazer.spp[i] & pred_stanza == this.grazer.stanza)
         
-        if(nrow(this.grazer.diet) == 0){next()}
         
-      
+       
+        # print(paste0('diet ',nrow(this.grazer.diet)))
+        if(nrow(this.grazer.diet) == 0){next()}
         
         if(dietSource == 'prm'){
 
@@ -129,6 +172,7 @@ get_ppc <- function(param.dir, atl.dir, fgs,dietSource, timeRange, plottl = F){
             dplyr::select(time,pred,agecl,pred_stanza,prey,prop.consumption) %>%
             dplyr::left_join(data.frame(time = prod.time.yr[prod.time.match], eat = this.grazer.data))
           
+          # print(paste0('grazer consumed', nrow(this.grazer.consumed)))
           this.grazer.ls[[j]] =data.frame(pred = grazer.spp[i],
                      agecl = this.agecl[j],
                      time = prod.time.yr[prod.time.match],

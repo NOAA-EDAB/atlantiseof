@@ -83,12 +83,13 @@ get_diet_prop = function(param.dir,atl.dir,fgs,dietFile = NA,plottl = F, dietSou
     
     new.diet.file = 'neus_outputDetDiet_processed.gz'
     if(!file.exists(paste0(atl.dir,new.diet.file))){
-      atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  diet.file,outputname =   new.diet.file, cloud = cloud)  
+      atlantiseof::process_det_diet(atl.dir = atl.dir,detDietfile =  dietFile,outputname =   new.diet.file,
+                                    cloud = ifelse(.Platform$OS.type == 'unix',T,F))  
     }
     
     dietmat <- atlantisom::load_detailed_diet_comp(dir = atl.dir,
                                                    file_diet = new.diet.file,
-                                                   fgs = read.csv(fgs.file)) |> 
+                                                   fgs = read.csv(fgs)) |> 
       dplyr::group_by(species,agecl,time.days,prey) |> 
       dplyr::summarize(consumption = sum(atoutput,na.rm=T))
     

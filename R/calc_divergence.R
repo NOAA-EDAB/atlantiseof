@@ -11,7 +11,7 @@
 # ref.prop = rep(1/89,89)
 # ref.prop = bio.prop.mat[1,]
 
-calc_divergence = function(bio.df, ref.prop, show.plot = F){
+calc_divergence = function(bio.df, atl.dir,ref.prop, fgs.file,show.plot = F){
   
   #utility functions
   calculate_KL_divergence = function(reference, comparison){
@@ -56,7 +56,7 @@ calc_divergence = function(bio.df, ref.prop, show.plot = F){
     dplyr::filter(IsTurnedOn == 1)
   
   # Calculate the proportions for each year
-  bio.orig = read.table(paste0(atl.dir,'neus_outputBiomIndx.txt'), header = TRUE)
+  bio.orig = read.table(list.files(path = atl.dir,pattern = 'neus_outputBiomIndx.txt', full.names =T), header = TRUE)
   
   bio.time = bio.orig$Time  
   
