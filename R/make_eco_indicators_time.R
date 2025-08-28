@@ -141,7 +141,7 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
   
   #Calculate divergence metrics
   if(is.null(ref.run.dir)){
-    ref.prop = data.frame(Code = bio.df$Code, biomass.prop =  rep(1/length(unique(bio.df$Code)), length(unique(bio.df$Code))))
+    ref.prop = data.frame(Code = unique(bio.df$Code), biomass.prop =  rep(1/length(unique(bio.df$Code)), length(unique(bio.df$Code))))
   }else{
     ref.prop = atlantiseof::calc_bio_prop(ref.run.dir,fgs.file = fgs.file, timeRange = 30:80)
   }
