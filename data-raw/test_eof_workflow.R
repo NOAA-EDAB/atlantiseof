@@ -15,10 +15,10 @@ ref.state.file = here::here('data-raw','ref_eco_state.rds')
 data.dir = 'D:/catch_thresholds_eof_3/'
 out.dir = 'D:/catch_thresholds_eof_3/output/'
 run.prefix = 'catch_thresholds_eof_3'
-setup.file = read.csv('D:/catch_thresholds_eof_3/output/catch_thresholds_eof_3_setup.csv')
+setup.file = read.csv('D:/catch_thresholds_eof_3/catch_thresholds_eof_3_setup.csv')
 dietSource = 'detdiet'
 
-ref.thresh =est_link_threshold(param.dir = param.dir,
+ref.thresh =atlantiseof::est_link_threshold(param.dir = param.dir,
                    atl.dir = atl.dir,
                    dietSource = 'detdiet',
                    TL = NA,

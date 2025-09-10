@@ -57,16 +57,17 @@ make_desired_state_distance = function(param.dir,atl.dir,dietSource,ref.state.fi
   for(i in 1:length(run.names)){
     
     #read in eco indicators for this run, using make_eco_indicators on each run
-    this.run.ind =  readRDS(paste0(data.dir,run.names[i],'/eco_indicators_mean.rds')) |> 
+    this.run.ind =  readRDS(paste0(data.dir,run.names[i],'/eco_indicators_ts.rds')) |> 
       dplyr::mutate(run.name = run.names[i],
                     run = run.id[i]) |> 
       dplyr::left_join(setup.file, by = 'run') |> 
       dplyr::select(run.name,run, everything())
     
     #scales data by mean of reference and replaces non-finite values with 0
-    this.run.ref = this.run.ind %>%
-      tidyr::gather('Variable','state.value', -run,-run.name,-catch.force, -catch.threshold, -catch.scalar)%>%
-      dplyr::left_join(ref.state)%>%
+    this.run.ref = this.run.ind |> 
+      dplyr::filter(year %in% timeRange) |> 
+      tidyr::gather('Variable','state.value', -run,-run.name,-catch.force, -catch.threshold, -catch.scalar) |> 
+      dplyr::left_join(ref.state) |> 
       dplyr::mutate(state.value.scaled = state.value / mean.value,
                     state.value.scaled = ifelse(!is.finite(state.value.scaled),0,state.value.scaled))
     run.ind.ref.ls[[i]] = this.run.ref
