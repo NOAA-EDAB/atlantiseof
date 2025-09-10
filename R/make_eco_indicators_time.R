@@ -8,6 +8,7 @@
 #'@param dietSource Character String. Whether to use realized diets (diet), detailedDiet (detdiet) or parameter files (param)
 #'@param timeRange Numeric vector. Range of years to summarize
 #'@param start.year Numeric. Year to start the time series. Default = 1964
+#'@param survdat.data datadrame of survdat length,age,weight data
 #'@param cloud Logical. If TRUE, run on cloud Default is FALSE.
 #'@param ref.run.dir Character String. Path to reference run directory. If NULL, no divergence metrics are calculated.
 #'
@@ -16,7 +17,7 @@
 #'@export
 
 
-make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietSource,timeRange,start.year = 1964,cloud = F, ref.run.dir = NULL){
+make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietSource,timeRange,start.year = 1964,cloud = F, ref.run.dir = NULL, survdat.data = NA){
   
   #Load the groups.csv file
   stock.ref = atlantiseof::get_bmsy_ss(fgs = fgs.file, default.bmsy.frac = 0.4) |>
@@ -130,19 +131,21 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
                             show.plot = F)
   
   #Calculate fish productivity
+
+  
   fish.prop = atlantiseof::calc_fish_prod(param.dir = param.dir,
                                           atl.dir =atl.dir,
                                           show.plot = FALSE,
-                                          survdat = readRDS(here::here('data-raw','survey_lenagewgt.rds')),
+                                          survdat = survdat.data,
                                           timeRange =timeRange)
   
   #Calculate divergence metrics
   if(is.null(ref.run.dir)){
-    ref.prop = data.frame(Code = bio.df$Code, biomass.prop =  rep(1/length(unique(bio.df$Code)), length(unique(bio.df$Code))))
+    ref.prop = data.frame(Code = unique(bio.df$Code), biomass.prop =  rep(1/length(unique(bio.df$Code)), length(unique(bio.df$Code))))
   }else{
     ref.prop = atlantiseof::calc_bio_prop(ref.run.dir,fgs.file = fgs.file, timeRange = 30:80)
   }
-  diverge = atlantiseof::calc_divergence(bio.df = bio.df, ref.prop = ref.prop, show.plot =F)  |> 
+  diverge = atlantiseof::calc_divergence(bio.df = bio.df,atl.dir = atl.dir, ref.prop = ref.prop,fgs.file = fgs.file, show.plot =F)  |> 
     dplyr::mutate(year = floor(Time/365)) |> 
     dplyr::filter(year %in% timeRange) |>
     dplyr::group_by(year) |> 
@@ -154,6 +157,9 @@ make_eco_indicators_time = function(param.dir,atl.dir,group.index,fgs.file,dietS
   
   #Calculate foodweb metrics
   foodweb = atlantiseof::calc_foodweb(atl.dir = atl.dir,
+                                      fgs.file = fgs.file,
+                                      param.dir = param.dir,
+                                      timeRange = timeRange,
                                       dietSource = dietSource,
                                       show.plot = F,
                                       out.dir = atl.dir)

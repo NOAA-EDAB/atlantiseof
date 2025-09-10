@@ -13,7 +13,7 @@
 #'@export
 #'
 
-calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out.dir = NA){
+calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.plot = F, figure.dir = NA, out.dir = NA, ...){
   
   # tictoc::tic()
   
@@ -27,13 +27,13 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
   
   #Read in diet data
   if(dietSource == 'detdiet'){
-    dietFile = 'neus_outputDetDiet_processed.gz'
+    dietFile = list.files(path = atl.dir, pattern = 'neus_outputDetDiet_processed.gz', full.names = T)
     
   }else if(dietSource == 'diet'){
-    dietFile = paste0(atl.dir,'neus_outputDietCheck.txt')
+    dietFile = list.files(path = atl.dir, pattern = 'neus_outputDietCheck.txt',full.names = T)
     
   }else if(dietSource == 'prm'){
-    dietFile = paste0(param.dir, 'at_biology.prm')
+    dietFile = list.files(path = param.dir, pattern = 'at_biology.prm',full.names = T)
     
   }else{
     stop('dietSource must be one of detdiet, diet, or param')
@@ -45,7 +45,7 @@ calc_foodweb = function(atl.dir, dietSource, show.plot = F, figure.dir = NA, out
   if(any(grepl('agecl', colnames(diet.prop)))){
     
     #make age-structured network using agemat
-    age.mat = atlantiseof::get_age_mat(bio.file = paste0(param.dir, 'at_biology.prm')) |> 
+    age.mat = atlantiseof::get_age_mat(bio.file = list.files(path =param.dir, pattern= 'at_biology.prm',full.names = T)) |> 
       dplyr::left_join(fgs)
     
     food_web_df = diet.prop |> 
