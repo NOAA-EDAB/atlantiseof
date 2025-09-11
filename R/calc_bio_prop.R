@@ -1,4 +1,5 @@
-#' @description calculates the mean biomass proportion from an atlantis run
+#'Biomass Proportion
+#'Calculates the mean biomass proportion from an atlantis run
 #'
 #'@param atl.dir character, directory containing atlantis output files
 #'@param fgs.file character, path to the functional groups file

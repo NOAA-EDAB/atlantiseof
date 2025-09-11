@@ -1,6 +1,7 @@
 # Functions for food web calculations in calc_foodweb() and elsewhere
 
-#'@description Function to calculate trophic level with fixed primary producers (useful for age-structured food web)
+#'Corrected Trophic Levels with assumed primary producers
+#'Function to calculate trophic level with fixed primary producers (useful for age-structured food web)
 #'
 #'@param adj_matrix matrix. directed flow adjacency matrix of the food web with names
 #'@param basal_species vector. character vector of species that are basal (primary producers)
@@ -40,7 +41,8 @@ calculate_trophic_levels_corrected <- function(adj_matrix, basal_species) {
   return(tl)
 }
 
-#'@description Function to calculate trophic coherence
+#'Coherence
+#'Function to calculate trophic coherence
 #'@param adj_matrix matrix. directed flow adjacency matrix of the food web with names
 #'@param trophic_levels numeric. named vector of trophic levels by species in the adj_matrix returned from calculate_trophic_levels_corrected()
 #'
@@ -69,7 +71,8 @@ calculate_coherence <- function(adj_matrix, trophic_levels) {
   return(max(0, min(1, coherence)))
 }
 
-#'@description Function to calculate the average Jaccard similarity
+#'Jaccard Similarity
+#'Function to calculate the average Jaccard similarity
 #'@param g igraph object. directed food web graph
 #'
 #'@returns numeric average jaccard similarity value
@@ -111,7 +114,8 @@ calculate_avg_jaccard <- function(g) {
   return(mean(jaccard_scores, na.rm = TRUE))
 }
 
-#'@description Optimized function to calculate resilience from the dominant eigenvalue
+#'Network Resilience
+#' Optimized function to calculate resilience from the dominant eigenvalue
 #'@param adj_matrix matrix. directed flow adjacency matrix of the food web with names
 #'
 #'@returns numeric resilience value

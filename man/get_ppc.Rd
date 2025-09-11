@@ -13,7 +13,7 @@ get_ppc(param.dir, atl.dir, fgs, dietSource, timeRange, plottl = F)
 
 \item{fgs}{Character String. Name of groups.csv file}
 
-\item{dietSource}{string. Source of diet matrix, either 'realized' or 'prm'. Default is 'prm'.}
+\item{dietSource}{string. Source of diet matrix, either 'diet','detDiet', or 'prm'. Default is 'prm'.}
 
 \item{timeRange}{Vector}
 

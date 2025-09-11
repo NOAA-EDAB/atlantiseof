@@ -1,4 +1,5 @@
-#'@description Function to retrieve age at maturity parameters
+#'Atlantis Age at Maturity
+#'Function to retrieve age at maturity parameters
 #'
 #'@param bio.file character. Path to biomass.prm file
 #'@param write logical. whether to write output to file
@@ -29,7 +30,8 @@ get_age_mat = function(bio.file,write =F){
   
 }
 
-#'@description Function to retrieve FSPB paramters
+#'Edit Atlantis FSPB
+#'Function to retrieve FSPB paramters
 #'
 #'@param bio.file character. Path to biomass.prm file
 #'@param write logical. whether to write output to file

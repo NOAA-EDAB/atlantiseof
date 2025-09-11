@@ -1,4 +1,5 @@
-#'@description Function to calculate smallfish-per-largefish ratio based on Atlantis output
+#'Fish productivity indicators
+#'Function to calculate smallfish-per-largefish ratio based on Atlantis output
 #'
 #'@param param.dir Character String. Path to Parameter directory
 #'@param atl.dir Character String. Path to output directory

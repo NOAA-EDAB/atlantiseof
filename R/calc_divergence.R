@@ -1,4 +1,5 @@
-#' @description Calculates the compositional divergence metrics from atlantis output
+#' Divergence metrics for species composition
+#' Calculates the compositional divergence metrics from atlantis output
 #'
 #'@param bio.df dataframe. Atlantis biomass output dataframe with columns: Time, Code, Biomass
 #'@param ref.prop dataframe. Reference proportion dataframe with the reference proportions of each group (species x prop) returned from calc_ref_prop

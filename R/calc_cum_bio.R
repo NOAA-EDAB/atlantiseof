@@ -1,4 +1,5 @@
-#' @description Calculates the cumulative biomass statistics from Libralato et al, 2019
+#'Cumulative Biomass Distribution
+#'Calculates the cumulative biomass statistics from Libralato et al, 2019
 #'
 #'@param biomass.df dataframe. Biomass dataframe with the biomass of each group (species x year x biomass) returned from est_biomass_time
 #'@param tl.df dataframe. Trophic level dataframe with the trophic levels of each group (species x year x TL) returned from est_trophic_level_time

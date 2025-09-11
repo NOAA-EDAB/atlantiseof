@@ -8,13 +8,12 @@
 #'
 #'@return dataframe of eco indicators by year
 #'
-#'@export
 #'
 #'
 
 # eco.ind.file  = paste0(data.dir,'catch_thresholds_eof_3_run_eco_ind.rds')
 
-plot_distance_metrics <- function(figure.dir,eco.ind.file,setup.file,thresholds.file) {
+plot_eco_ind <- function(figure.dir,eco.ind.file,setup.file,thresholds.file) {
 
   #Read in run indicators 
   eco.ind = readRDS(eco.ind.file) |> 

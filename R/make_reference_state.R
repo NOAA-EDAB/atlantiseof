@@ -1,5 +1,5 @@
-
-# Calculates ecosystem indicators from a reference run and converts them to a desired state based on quantiles of timeseries
+#'Make Reference State
+#'Calculates ecosystem indicators from a reference run and converts them to a desired state based on quantiles of timeseries
 #'
 #'
 #'@param param.dir Character String. Path to Parameter directory

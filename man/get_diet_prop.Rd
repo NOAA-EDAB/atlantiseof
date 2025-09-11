@@ -4,7 +4,7 @@
 \alias{get_diet_prop}
 \title{Retreives diet proportions from parameter files}
 \usage{
-get_diet_prop(param.dir, atl.dir, fgs, dietFile, plottl = F, dietSource)
+get_diet_prop(param.dir, atl.dir, fgs, dietFile = NA, plottl = F, dietSource)
 }
 \arguments{
 \item{param.dir}{Character String. Path to Parameter directory}

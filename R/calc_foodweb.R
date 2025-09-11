@@ -1,4 +1,5 @@
-#' @description calculates food web indices from detailed diet output
+#'Food web indices
+#'calculates food web indices from detailed diet output
 #'
 #'@param atl.dir character string. Path to Atlantis output directory
 #'@param param.dir character string. Path to Atlantis parameter directory
@@ -184,10 +185,7 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
   }
   
   # Combine all the stored data frames into a single one
-  final_df <- do.call(rbind, time_series_results) |> 
-    dplyr::mutate(reactive_acendancy = ascendancy/capacity)
-  
-  
+  final_df <- do.call(rbind, time_series_results)
   
   if(show.plot){
     

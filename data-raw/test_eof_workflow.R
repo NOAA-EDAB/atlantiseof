@@ -12,10 +12,10 @@ start.year = 1964
 
 figure.dir = here::here('figures')
 ref.state.file = here::here('data-raw','ref_eco_state.rds')
-data.dir = 'D:/catch_thresholds_eof_3/'
-out.dir = 'D:/catch_thresholds_eof_3/output/'
+data.dir = 'D:/data/catch_thresholds_eof_3/'
+out.dir = 'D:/data/catch_thresholds_eof_3/output/'
 run.prefix = 'catch_thresholds_eof_3'
-setup.file = read.csv('D:/catch_thresholds_eof_3/catch_thresholds_eof_3_setup.csv')
+setup.file = read.csv('D:/data/catch_thresholds_eof_3/catch_thresholds_eof_3_setup.csv')
 dietSource = 'detdiet'
 survdat.data = readRDS(here::here('data-raw','survey_lenagewgt.rds'))
 
@@ -30,12 +30,13 @@ range(ref.thresh$threshold, na.rm = TRUE)
 
 atlantiseof::make_reference_state(param.dir,atl.dir,group.index,fgs.file,dietSource,20:60,out.name,desired.p)
 atlantiseof::make_desired_state_distance(param.dir,atl.dir,dietSource,ref.state.file,data.dir,out.dir,run.prefix,setup.file)
-atlantiseof::plot_distance_metrics(figure.dir = here::here('figures','eof_thresholds_3',''),
-                                   distance.file = 'D:/catch_thresholds_eof_3/output/catch_thresholds_eof_3_distance.rds',
-                                   thresholds.file = 'D:/catch_thresholds_eof_3/output/catch_thresholds_eof_3_eof_threshold.rds',
+atlantiseof::plot_distance_metrics(figure.dir = 'D:/data/catch_thresholds_eof_3/output',
+                                   distance.file = 'D:/data/catch_thresholds_eof_3/output/catch_thresholds_eof_3_distance.rds',
+                                   thresholds.file = 'D:/data/catch_thresholds_eof_3/output/catch_thresholds_eof_3_eof_threshold.rds',
                                    ref.state.file = here::here('data-raw','ref_eco_state.rds'))
-atlantiseof::plot_ind_pca(data.dir = 'D:/catch_thresholds_eof_3/output/',
-                          ref.ind.file = paste0(data.dir,'output/catch_thresholds_eof_3_run_eco_ind.rds'),
+data.dir = 'D:/data/catch_thresholds_eof_3/output/'
+atlantiseof::plot_ind_pca(data.dir = 'D:/data/catch_thresholds_eof_3/output/',
+                          ref.ind.file = paste0(data.dir,'catch_thresholds_eof_3_run_eco_ind.rds'),
                           ref.state.file = here::here('data-raw','ref_eco_state.rds'),
                           figure.dir =  here::here('figures','eof_thresholds_3',''))
 
