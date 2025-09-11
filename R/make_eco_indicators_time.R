@@ -58,8 +58,8 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
   spp.df = bio.df |>
     dplyr::left_join(catch.df, by = c("Code", "year")) |>
     dplyr::mutate(catch.biomass = catch / biomass)|>
-    dplyr::left_join(groups, by = "Code") |>
-    dplyr::select(-bmsy.y, -bmsy.x) # Remove bmsy columns to avoid confusion
+    dplyr::left_join(groups, by = "Code")
+    # dplyr::select(-bmsy.y, -bmsy.x) # Remove bmsy columns to avoid confusion
   
   # Get all species with non-zero catch for BMSY estimation
   is.fished = spp.df |>
@@ -82,7 +82,9 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
   # Add overfished status
   spp.df = spp.df |>
     dplyr::left_join(spp.bmsy, by = "Code") |>
-    dplyr::mutate(overfished = ifelse(biomass > bmsy, 0, 1))
+    dplyr::mutate(bmsy = dplyr::coalesce(bmsy.x,bmsy.y),
+                  overfished = ifelse(biomass > bmsy, 0, 1)) |> 
+    dplyr::select(-bmsy.x,-bmsy.y)
   
   # Biomass and catch metrics
   eco.df = spp.df |>
@@ -154,7 +156,7 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     atlantiseof::calc_cum_bio(bio.df = bio.df, tl.df = tl.df, show.plot = F)
   }, error = function(e) {
     warning("Failed to calculate cumulative biomass. Returning NAs. Error: ", e$message)
-    data.frame(year = timeRange) # Empty df with year for joining
+    data.frame(year = timeRange, steep = NA, bio_inf = NA, tl_inf = NA, b1_param = NA, b2_param = NA, c_param = NA, d_param  = NA, e_param = NA) # Empty df with year for joining
   })
   
   # Calculate fish productivity
@@ -164,7 +166,7 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
                                 timeRange = timeRange)
   }, error = function(e) {
     warning("Failed to calculate fish productivity. Returning NAs. Error: ", e$message)
-    data.frame(year.ref = timeRange) # Empty df with join key
+    data.frame(year.ref = timeRange,small.large.ratio.anom.mean  = NA) # Empty df with join key
   })
   
   # Calculate divergence metrics
@@ -174,7 +176,7 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     } else {
       ref.prop = atlantiseof::calc_bio_prop(ref.run.dir, fgs.file = fgs.file, timeRange = 30:80)
     }
-    atlantiseof::calc_divergence(bio.df = bio.df, atl.dir = atl.dir, ref.prop = ref.prop, fgs.file = fgs.file, show.plot = F) |>
+    atlantiseof::calc_divergence(bio.df = bio.df, ref.prop = ref.prop, show.plot = F) |>
       dplyr::mutate(year = floor(Time/365)) |>
       dplyr::filter(year %in% timeRange) |>
       dplyr::group_by(year) |>
@@ -190,10 +192,7 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
   
   # Calculate foodweb metrics
   foodweb.df <- tryCatch({
-    foodweb = atlantiseof::calc_foodweb(atl.dir = atl.dir, fgs.file = fgs.file,
-                                        param.dir = param.dir, timeRange = timeRange,
-                                        dietSource = dietSource, show.plot = F,
-                                        out.dir = atl.dir)
+    foodweb = atlantiseof::calc_foodweb(atl.dir = atl.dir, dietSource = dietSource, show.plot = F)
     foodweb$metric_ts |>
       dplyr::mutate(year = floor(time/365)) |>
       dplyr::filter(year %in% timeRange) |>
@@ -202,7 +201,23 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
       dplyr::summarise(dplyr::across(dplyr::everything(), mean, .names = "{.col}", na.rm = T))
   }, error = function(e) {
     warning("Failed to calculate foodweb metrics. Returning NAs. Error: ", e$message)
-    data.frame(year = timeRange) # Empty df with year for joining
+    data.frame(year = timeRange,
+               connectance = NA,
+               mean_in_degree = NA,
+               mean_out_degree= NA,
+               mean_betweenness = NA,
+               network_betweenness_centralization =NA,
+               modularity_directed = NA,
+               modularity_undirected = NA,
+               redundancy_proxy = NA,
+               avg_jaccard_similarity = NA,
+               ascendancy = NA, 
+               capacity = NA,
+               coherence = NA,
+               overhead = NA,
+               rel_ascendancy = NA,
+               resilience_eigenvalue = NA,
+               reactive_ascendancy = NA) # Empty df with year for joining
   })
   
   # --- Final Assembly ---

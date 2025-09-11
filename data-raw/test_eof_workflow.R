@@ -17,6 +17,7 @@ out.dir = 'D:/catch_thresholds_eof_3/output/'
 run.prefix = 'catch_thresholds_eof_3'
 setup.file = read.csv('D:/catch_thresholds_eof_3/catch_thresholds_eof_3_setup.csv')
 dietSource = 'detdiet'
+survdat.data = readRDS(here::here('data-raw','survey_lenagewgt.rds'))
 
 ref.thresh =atlantiseof::est_link_threshold(param.dir = param.dir,
                    atl.dir = atl.dir,
