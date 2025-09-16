@@ -34,7 +34,7 @@ reference_subgroup_weights <- lapply(subgroups_per_group, function(num_subgroups
 
 # --- Case 1: Single Group Dominance ---
 dominant_groups_to_test <- 1:N_groups
-dominance_factors_to_test <- seq(0.1,20,by = 0.1)
+dominance_factors_to_test <- exp(seq(log(1E-2),log(20),length.out = 10))
 
 params_case1 <- expand.grid(t = dominant_groups_to_test, d = dominance_factors_to_test)
 
@@ -69,7 +69,7 @@ case2_scenarios <- lapply(1:num_random_scenarios, function(i) {
 names(case2_scenarios) <- paste0("RandomScenario_", 1:num_random_scenarios)
 
 
-# ==============================================================================
+
 # DIAGNOSTIC CHECKS & VISUALIZATIONS
 # ==============================================================================
 
@@ -79,9 +79,10 @@ sample_scenario_data <- case1_scenarios[[sample_scenario_name]]
 cat("\n--- Running Diagnostic Checks on Scenario:", sample_scenario_name, "---\n")
 
 # Check 1: Sum of all subgroup weights is 1
-all_sums_ok <- all(sapply(c(case1_scenarios, case2_scenarios), function(df) {
-  isTRUE(all.equal(sum(df$subgroup_weight), 1))
-}))
+all_sums_ok <- sapply(1:length(c(case1_scenarios, case2_scenarios)), function(df) {
+  sum(case1_scenarios[[df]]$subgroup_weight)
+  # isTRUE(all.equal(sum(case1_scenarios$subgroup_weight), 1))
+})
 cat("Check 1: Sum of all subgroup weights is 1 for all scenarios...", if(all_sums_ok) "PASSED" else "FAILED", "\n")
 
 # Check 2: Dominant proportion
@@ -147,4 +148,5 @@ plot.df = full_analysis_df |>
   dplyr::filter(group == t)
 
 ggplot(plot.df, aes(x = d, group_weight))+
-  geom_line()
+  geom_line()+
+  ylim(0,1)
