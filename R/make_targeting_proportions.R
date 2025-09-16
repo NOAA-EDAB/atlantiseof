@@ -53,87 +53,116 @@ normalize <- function(x) {
 #'   ref_sub_weights = ref_weights,
 #'   rounding_digits = 4
 #' )
-generate_dominant_scenario<- function(dominant_group_name, dominance_factor, group.mapping, ref_sub_weights, rounding_digits) {
-  
-  # --- 1. Input Validation and Setup ---
-  # The dplyr package is required for this implementation.
+# Helper function to normalize a vector to sum to 1
+normalize <- function(x) {
+  if (sum(x, na.rm = TRUE) == 0) return(x)
+  return(x / sum(x, na.rm = TRUE))
+}
+
+# Helper function to normalize a vector to sum to 1
+normalize <- function(x) {
+  if (sum(x, na.rm = TRUE) == 0) return(x)
+  return(x / sum(x, na.rm = TRUE))
+}
+
+generate_dominant_scenario <- function(dominant_group_name, dominance_factor, group.mapping, ref_sub_weights, rounding_digits) {
   if (!requireNamespace("dplyr", quietly = TRUE)) {
     stop("Package 'dplyr' is required but is not installed.")
   }
   
-  if (!dominant_group_name %in% group.mapping$Group) {
+  # --- 1. Calculate a SINGLE, STATIC set of group weights ---
+  all_groups <- unique(as.character(group.mapping$Group))
+  if (!dominant_group_name %in% all_groups) {
     stop("`dominant_group_name` not found in `group.mapping$Group`.")
   }
   
-  all_groups <- unique(as.character(group.mapping$Group))
   num_groups <- length(all_groups)
-  dominant_group_index <- which(all_groups == dominant_group_name)
-  
-  # --- 2. Generate New Dominant Group Weights ---
-  # This logic is independent of time and applies to the groups as a whole.
   p_t <- dominance_factor / (1 + dominance_factor)
   p_nt <- 1 / (1 + dominance_factor)
+  group_weights <- numeric(num_groups)
+  names(group_weights) <- all_groups
+  group_weights[dominant_group_name] <- p_t
   
-  new_group_weights <- numeric(num_groups)
-  new_group_weights[dominant_group_index] <- p_t
-  
-  non_dominant_indices <- (1:num_groups)[-dominant_group_index]
-  if (num_groups > 1) {
-    # Distribute the non-dominant proportion randomly among other groups
-    random_nt_weights <- normalize(runif(num_groups - 1)) * p_nt
-    new_group_weights[non_dominant_indices] <- random_nt_weights
+  non_dominant_groups <- setdiff(all_groups, dominant_group_name)
+  if (length(non_dominant_groups) > 0) {
+    # Distribute the non-dominant proportion based on reference weights
+    group_ref_totals <- ref_sub_weights %>%
+      dplyr::left_join(group.mapping, by = "SubGroup", relationship = "many-to-many") %>%
+      dplyr::filter(!is.na(Group)) %>%
+      dplyr::group_by(Group) %>%
+      dplyr::summarise(total_ref_weight = sum(Weight, na.rm = TRUE), .groups = "drop")
+    
+    non_dominant_ref_weights <- group_ref_totals %>%
+      dplyr::filter(Group %in% non_dominant_groups)
+    
+    proportions <- normalize(non_dominant_ref_weights$total_ref_weight)
+    proportional_nt_weights <- proportions * p_nt
+    
+    names(proportional_nt_weights) <- non_dominant_ref_weights$Group
+    group_weights[non_dominant_groups] <- proportional_nt_weights[non_dominant_groups]
   }
   
-  new_group_weights_df <- data.frame(
-    Group = all_groups,
-    group_weight = new_group_weights,
-    stringsAsFactors = FALSE
+  group_weights_df <- data.frame(
+    Group = names(group_weights),
+    group_weight = group_weights
   )
   
-  # --- 3. Calculate Relative Subgroup Proportions from Reference Data ---
-  # This preserves the internal structure of each group at each timestep.
-  ref_data <- dplyr::left_join(ref_sub_weights, group.mapping, by = "SubGroup") %>%
+  # --- 2. Calculate and FIX relative weights per timestep ---
+  final_data <- ref_sub_weights %>%
+    dplyr::left_join(group.mapping, by = "SubGroup", relationship = "many-to-many") %>%
+    dplyr::filter(!is.na(Group)) %>%
+    dplyr::left_join(group_weights_df, by = "Group") %>%
     dplyr::group_by(Time, Group) %>%
-    dplyr::mutate(relative_weight = Weight / sum(Weight)) %>%
+    dplyr::mutate(
+      relative_weight = {
+        group_total <- sum(Weight, na.rm = TRUE)
+        if (group_total == 0) 0 else Weight / group_total
+      }
+    ) %>%
     dplyr::ungroup()
   
-  # --- 4. Calculate Final Unrounded Subgroup Weights ---
-  # Apply the new group weights to the relative subgroup weights.
-  final_data <- dplyr::left_join(ref_data, new_group_weights_df, by = "Group") %>%
-    dplyr::mutate(unrounded_sub_weight = group_weight * relative_weight)
-  
-  # --- 5. Apply Rounding and Correction ---
-  # This must be done for each group at each timestep to ensure the sum is correct.
-  adjust_rounding <- function(df, digits) {
-    target_sum <- df$group_weight[1] # Target sum is the group's new weight
-    
-    rounded_weights <- round(df$unrounded_sub_weight, digits = digits)
-    discrepancy <- target_sum - sum(rounded_weights)
-    
-    # If there's a discrepancy, add it to the value with the largest original weight
-    # to minimize relative error.
-    if (discrepancy != 0) {
-      idx_to_adjust <- which.max(df$unrounded_sub_weight) 
-      rounded_weights[idx_to_adjust] <- rounded_weights[idx_to_adjust] + discrepancy
-    }
-    
-    df$subgroup_weight <- rounded_weights
-    return(df)
-  }
-  
-  # Split the data by Time and Group, apply the rounding function, and recombine.
-  corrected_data <- final_data %>%
+  # --- 3. Apply the simple, robust rounding method ---
+  result_df <- final_data %>%
     dplyr::group_by(Time, Group) %>%
-    dplyr::group_split() %>%
-    lapply(adjust_rounding, digits = rounding_digits) %>%
-    dplyr::bind_rows()
-  
-  # --- 6. Finalize Output ---
-  result_df <- corrected_data %>%
+    dplyr::group_modify(function(df, key) {
+      target_sum <- df$group_weight[1]
+      unrounded <- target_sum * df$relative_weight
+      
+      if (sum(unrounded, na.rm = TRUE) == 0) {
+        df$subgroup_weight <- 0
+        return(df)
+      }
+      
+      rounded <- round(unrounded, digits = rounding_digits)
+      discrepancy <- target_sum - sum(rounded)
+      
+      if (abs(discrepancy) > (10^-(rounding_digits + 2))) {
+        idx_to_adjust <- which.max(unrounded)
+        if(length(idx_to_adjust) > 0) {
+          rounded[idx_to_adjust] <- rounded[idx_to_adjust] + discrepancy
+        }
+      }
+      
+      df$subgroup_weight <- rounded
+      return(df)
+    }) %>%
+    dplyr::ungroup() %>%
     dplyr::select(Time, Group, SubGroup, group_weight, subgroup_weight) %>%
     dplyr::arrange(Time, Group, SubGroup)
   
-  return(result_df)
+  # --- 4. Final Tweak: Ensure total proportion sums to exactly 1 ---
+  # This handles any minor floating-point dust left over from rounding.
+  final_df <- result_df %>%
+    dplyr::group_by(Time) %>%
+    dplyr::mutate(
+      discrepancy = 1 - sum(subgroup_weight),
+      # Add discrepancy to the single largest subgroup to fix the sum
+      subgroup_weight = if_else(subgroup_weight == max(subgroup_weight), subgroup_weight + discrepancy, subgroup_weight)
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-discrepancy) # Clean up helper column
+  
+  return(final_df)
 }
 #' Generate a Scenario with Randomly Sampled Group Weights
 #'
@@ -157,66 +186,88 @@ generate_dominant_scenario<- function(dominant_group_name, dominance_factor, gro
 #'   rounding_digits = 4
 #' )
 
-generate_random_scenario<- function(group.mapping, ref_sub_weights, rounding_digits) {
-  
-  # --- 1. Input Validation and Setup ---
+
+generate_random_scenario <- function(group.mapping, ref_sub_weights, rounding_digits) {
   if (!requireNamespace("dplyr", quietly = TRUE)) {
     stop("Package 'dplyr' is required but is not installed.")
   }
   
-  all_groups <- unique(as.character(group.mapping$Group))
-  num_groups <- length(all_groups)
+  # --- 1. Calculate Group Weights Using a WEIGHTED RANDOM Draw ---
+  # This method is truly random but respects the proportions in the reference data.
+  group_ref_totals <- ref_sub_weights %>%
+    dplyr::left_join(group.mapping, by = "SubGroup", relationship = "many-to-many") %>%
+    dplyr::filter(!is.na(Group)) %>%
+    dplyr::group_by(Group) %>%
+    dplyr::summarise(total_ref_weight = sum(Weight, na.rm = TRUE), .groups = "drop")
   
-  # --- 2. Generate New Random Group Weights ---
-  # Group weights are sampled once and then applied across all timesteps.
-  random_group_weights <- normalize(runif(num_groups))
+  # Use the total reference weights as shape parameters (alphas) for a Gamma distribution.
+  # Normalizing random draws from a Gamma distribution is equivalent to drawing
+  # from a Dirichlet distribution, which is the correct way to get a random
+  # vector that sums to 1.
+  # A small value is added to the shape to avoid issues if a group's total weight is zero.
+  alphas <- group_ref_totals$total_ref_weight + 0.0001
+  random_draws <- rgamma(length(alphas), shape = alphas, scale = 1)
   
-  new_group_weights_df <- data.frame(
-    Group = all_groups,
-    group_weight = random_group_weights,
-    stringsAsFactors = FALSE
+  # Normalize the random draws to get the final group weights
+  random_group_weights <- normalize(random_draws)
+  
+  group_weights_df <- data.frame(
+    Group = group_ref_totals$Group,
+    group_weight = random_group_weights
   )
   
-  # --- 3. Calculate Relative Subgroup Proportions from Reference Data ---
-  # This preserves the internal structure of each group at each timestep.
-  ref_data <- dplyr::left_join(ref_sub_weights, group.mapping, by = "SubGroup") %>%
+  # --- 2. Calculate relative weights per timestep ---
+  final_data <- ref_sub_weights %>%
+    dplyr::left_join(group.mapping, by = "SubGroup", relationship = "many-to-many") %>%
+    dplyr::filter(!is.na(Group)) %>%
+    dplyr::left_join(group_weights_df, by = "Group") %>%
     dplyr::group_by(Time, Group) %>%
-    dplyr::mutate(relative_weight = Weight / sum(Weight)) %>%
+    dplyr::mutate(
+      relative_weight = {
+        group_total <- sum(Weight, na.rm = TRUE)
+        if (group_total == 0) 0 else Weight / group_total
+      }
+    ) %>%
     dplyr::ungroup()
   
-  # --- 4. Calculate Final Unrounded Subgroup Weights ---
-  # Apply the new random group weights to the relative subgroup weights.
-  final_data <- dplyr::left_join(ref_data, new_group_weights_df, by = "Group") %>%
-    dplyr::mutate(unrounded_sub_weight = group_weight * relative_weight)
-  
-  # --- 5. Apply Rounding and Correction ---
-  # This must be done for each group at each timestep to ensure the sum is correct.
-  adjust_rounding <- function(df, digits) {
-    target_sum <- df$group_weight[1]
-    
-    rounded_weights <- round(df$unrounded_sub_weight, digits = digits)
-    discrepancy <- target_sum - sum(rounded_weights)
-    
-    if (discrepancy != 0) {
-      idx_to_adjust <- which.max(df$unrounded_sub_weight) 
-      rounded_weights[idx_to_adjust] <- rounded_weights[idx_to_adjust] + discrepancy
-    }
-    
-    df$subgroup_weight <- rounded_weights
-    return(df)
-  }
-  
-  # Split the data by Time and Group, apply the rounding function, and recombine.
-  corrected_data <- final_data %>%
+  # --- 3. Apply the simple, robust rounding method ---
+  result_df <- final_data %>%
     dplyr::group_by(Time, Group) %>%
-    dplyr::group_split() %>%
-    lapply(adjust_rounding, digits = rounding_digits) %>%
-    dplyr::bind_rows()
-  
-  # --- 6. Finalize Output ---
-  result_df <- corrected_data %>%
+    dplyr::group_modify(function(df, key) {
+      if(is.na(df$group_weight[1])) {
+        df$subgroup_weight <- 0
+        return(df)
+      }
+      target_sum <- df$group_weight[1]
+      unrounded <- target_sum * df$relative_weight
+      if (sum(unrounded, na.rm = TRUE) == 0) {
+        df$subgroup_weight <- 0
+        return(df)
+      }
+      rounded <- round(unrounded, digits = rounding_digits)
+      discrepancy <- target_sum - sum(rounded)
+      if (abs(discrepancy) > (10^-(rounding_digits + 2))) {
+        idx_to_adjust <- which.max(unrounded)
+        if(length(idx_to_adjust) > 0) {
+          rounded[idx_to_adjust] <- rounded[idx_to_adjust] + discrepancy
+        }
+      }
+      df$subgroup_weight <- rounded
+      return(df)
+    }) %>%
+    dplyr::ungroup() %>%
     dplyr::select(Time, Group, SubGroup, group_weight, subgroup_weight) %>%
     dplyr::arrange(Time, Group, SubGroup)
   
-  return(result_df)
+  # --- 4. Final Tweak: Ensure total proportion sums to exactly 1 ---
+  final_df <- result_df %>%
+    dplyr::group_by(Time) %>%
+    dplyr::mutate(
+      discrepancy = 1 - sum(subgroup_weight),
+      subgroup_weight = if_else(subgroup_weight == max(subgroup_weight), subgroup_weight + discrepancy, subgroup_weight)
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-discrepancy)
+  
+  return(final_df)
 }
