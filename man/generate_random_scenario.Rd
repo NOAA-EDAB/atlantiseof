@@ -2,33 +2,46 @@
 % Please edit documentation in R/make_targeting_proportions.R
 \name{generate_random_scenario}
 \alias{generate_random_scenario}
-\title{Generate a Scenario with Randomly Sampled Group Weights}
+\title{Generate a Scenario with Randomly Sampled Group Weights (Modified)}
 \usage{
-generate_random_scenario(num_groups, ref_sub_weights, rounding_digits)
+generate_random_scenario(group.mapping, ref_sub_weights, rounding_digits)
 }
 \arguments{
-\item{num_groups}{The total number of groups (N).}
+\item{group.mapping}{A data frame that maps subgroups to groups, with columns
+\code{Group} and \code{SubGroup}.}
 
-\item{ref_sub_weights}{A list where each element is a numeric vector of
-reference weights for a group's subgroups. These define the constant relative
-proportions within each group.}
+\item{ref_sub_weights}{A data frame of reference weights for each subgroup at
+each timestep, with columns \code{SubGroup}, \code{Time}, and \code{Weight}.}
 
 \item{rounding_digits}{The number of decimal places to round the final weights to.}
 }
 \value{
-A data frame with columns: \code{group}, \code{subgroup}, \code{group_weight}, and \code{subgroup_weight}.
+A data frame with columns: \code{Time}, \code{Group}, \code{SubGroup}, \code{group_weight},
+and \code{subgroup_weight}.
 }
 \description{
 This function creates a weighting scenario where group weights are sampled
-randomly from a uniform Dirichlet distribution. The only constraint is that
-the sum of group weights is 1. The function ensures the final subgroup
-weights are rounded to a specified number of digits and sum exactly to 1.
+randomly from a uniform distribution. This random allocation is then applied
+across multiple timesteps, preserving the relative internal weighting of
+subgroups within each group at each timestep. The function ensures the final
+subgroup weights are rounded and sum exactly to their target group weights.
 }
 \examples{
-ref_w <- list(c(0.2, 0.8), c(0.5, 0.5), c(0.1, 0.2, 0.7))
-generate_random_scenario(
-  num_groups = 3,
-  ref_sub_weights = ref_w,
+# Example Data
+group_map <- data.frame(
+  Group = c("A", "A", "B", "B", "C"),
+  SubGroup = c("A1", "A2", "B1", "B2", "C1")
+)
+
+ref_weights <- data.frame(
+  SubGroup = rep(c("A1", "A2", "B1", "B2", "C1"), each = 2),
+  Time = rep(1:2, 5),
+  Weight = c(0.1, 0.12, 0.4, 0.38, 0.2, 0.2, 0.2, 0.2, 0.1, 0.1)
+)
+
+generate_random_scenario_modified(
+  group.mapping = group_map,
+  ref_sub_weights = ref_weights,
   rounding_digits = 4
 )
 }

@@ -11,32 +11,6 @@ normalize <- function(x) {
   return(x / sum(x))
 }
 
-#' Generate a Scenario with a Single Dominant Group
-#'
-#' This function creates a weighting scenario where one group (T) has a dominant
-#' proportion (P_T) that is a multiple (d) of the sum of all other group
-#' proportions (P_NT). The weights of the non-dominant groups are distributed
-#' randomly. The function ensures the final subgroup weights are rounded to a
-#' specified number of digits and sum exactly to 1.
-#'
-#' @param dominant_group_index The index (T) of the group to be dominant.
-#' @param dominance_factor The scaling factor (d) for dominance, where P_T = d * P_NT.
-#' @param num_groups The total number of groups (N).
-#' @param ref_sub_weights A list where each element is a numeric vector of
-#'   reference weights for a group's subgroups. These define the constant relative
-#'   proportions within each group.
-#' @param rounding_digits The number of decimal places to round the final weights to.
-#' @return A data frame with columns: `group`, `subgroup`, `group_weight`, and `subgroup_weight`.
-#' @export
-#' @examples
-#' ref_w <- list(c(0.2, 0.8), c(0.5, 0.5))
-#' generate_dominant_scenario(
-#'   dominant_group_index = 1,
-#'   dominance_factor = 3,
-#'   num_groups = 2,
-#'   ref_sub_weights = ref_w,
-#'   rounding_digits = 4
-#' )
 #' Generate a Scenario with a Single Dominant Group (Modified)
 #'
 #' This function creates a weighting scenario where one group has a dominant
@@ -79,7 +53,7 @@ normalize <- function(x) {
 #'   ref_sub_weights = ref_weights,
 #'   rounding_digits = 4
 #' )
-generate_dominant_scenario_modified <- function(dominant_group_name, dominance_factor, group.mapping, ref_sub_weights, rounding_digits) {
+generate_dominant_scenario <- function(dominant_group_name, dominance_factor, group.mapping, ref_sub_weights, rounding_digits) {
   
   # --- 1. Input Validation and Setup ---
   # The dplyr package is required for this implementation.
@@ -197,7 +171,7 @@ generate_dominant_scenario_modified <- function(dominant_group_name, dominance_f
 #'   rounding_digits = 4
 #' )
 
-generate_random_scenario_modified <- function(group.mapping, ref_sub_weights, rounding_digits) {
+generate_random_scenario <- function(group.mapping, ref_sub_weights, rounding_digits) {
   
   # --- 1. Input Validation and Setup ---
   if (!requireNamespace("dplyr", quietly = TRUE)) {
