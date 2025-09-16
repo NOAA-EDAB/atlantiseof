@@ -53,7 +53,7 @@ normalize <- function(x) {
 #'   ref_sub_weights = ref_weights,
 #'   rounding_digits = 4
 #' )
-generate_dominant_scenario <- function(dominant_group_name, dominance_factor, group.mapping, ref_sub_weights, rounding_digits) {
+generate_dominant_scenario<- function(dominant_group_name, dominance_factor, group.mapping, ref_sub_weights, rounding_digits) {
   
   # --- 1. Input Validation and Setup ---
   # The dplyr package is required for this implementation.
@@ -74,57 +74,67 @@ generate_dominant_scenario <- function(dominant_group_name, dominance_factor, gr
   p_t <- dominance_factor / (1 + dominance_factor)
   p_nt <- 1 / (1 + dominance_factor)
   
-  group_weights <- numeric(num_groups)
-  group_weights[dominant_group_index] <- p_t
+  new_group_weights <- numeric(num_groups)
+  new_group_weights[dominant_group_index] <- p_t
   
   non_dominant_indices <- (1:num_groups)[-dominant_group_index]
   if (num_groups > 1) {
+    # Distribute the non-dominant proportion randomly among other groups
     random_nt_weights <- normalize(runif(num_groups - 1)) * p_nt
-    group_weights[non_dominant_indices] <- random_nt_weights
+    new_group_weights[non_dominant_indices] <- random_nt_weights
   }
   
-  # --- CORRECTED SECTION: Calculate and Round Subgroup Weights per Group ---
-  final_subgroup_weights_list <- lapply(1:num_groups, function(i) {
-    # 1. Calculate unrounded weights for the current group
-    unrounded_group_specific_weights <- group_weights[i] * ref_sub_weights[[i]]
-    
-    # 2. Round them
-    rounded_group_specific_weights <- round(unrounded_group_specific_weights, digits = rounding_digits)
-    
-    # 3. Calculate discrepancy relative to the original group weight and adjust
-    discrepancy <- group_weights[i] - sum(rounded_group_specific_weights)
-    if (discrepancy != 0) {
-      idx_to_adjust <- which.max(rounded_group_specific_weights)
-      rounded_group_specific_weights[idx_to_adjust] <- rounded_group_specific_weights[idx_to_adjust] + discrepancy
-    }
-    
-    return(rounded_group_specific_weights)
-  })
-  
-  final_rounded_weights <- unlist(final_subgroup_weights_list)
-  
-  # --- CORRECTED SECTION: Build Final Data Frame ---
-  subgroups_per_group_vec <- sapply(ref_sub_weights, length)
-  group_ids <- rep(1:num_groups, times = subgroups_per_group_vec)
-  subgroup_ids <- unlist(lapply(subgroups_per_group_vec, seq_len))
-  
-  base_df <- data.frame(
-    group = group_ids,
-    subgroup = subgroup_ids,
-    subgroup_weight = final_rounded_weights
+  new_group_weights_df <- data.frame(
+    Group = all_groups,
+    group_weight = new_group_weights,
+    stringsAsFactors = FALSE
   )
   
-  # Calculate final group weights from the sum of corrected subgroup weights
-  group_weight_df <- aggregate(subgroup_weight ~ group, data = base_df, FUN = sum)
-  colnames(group_weight_df)[2] <- "group_weight"
+  # --- 3. Calculate Relative Subgroup Proportions from Reference Data ---
+  # This preserves the internal structure of each group at each timestep.
+  ref_data <- dplyr::left_join(ref_sub_weights, group.mapping, by = "SubGroup") %>%
+    dplyr::group_by(Time, Group) %>%
+    dplyr::mutate(relative_weight = Weight / sum(Weight)) %>%
+    dplyr::ungroup()
   
-  # Merge and reorder columns
-  final_df <- merge(base_df, group_weight_df, by = "group")
-  final_df <- final_df[, c("group", "subgroup", "group_weight", "subgroup_weight")]
+  # --- 4. Calculate Final Unrounded Subgroup Weights ---
+  # Apply the new group weights to the relative subgroup weights.
+  final_data <- dplyr::left_join(ref_data, new_group_weights_df, by = "Group") %>%
+    dplyr::mutate(unrounded_sub_weight = group_weight * relative_weight)
   
-  return(final_df)
+  # --- 5. Apply Rounding and Correction ---
+  # This must be done for each group at each timestep to ensure the sum is correct.
+  adjust_rounding <- function(df, digits) {
+    target_sum <- df$group_weight[1] # Target sum is the group's new weight
+    
+    rounded_weights <- round(df$unrounded_sub_weight, digits = digits)
+    discrepancy <- target_sum - sum(rounded_weights)
+    
+    # If there's a discrepancy, add it to the value with the largest original weight
+    # to minimize relative error.
+    if (discrepancy != 0) {
+      idx_to_adjust <- which.max(df$unrounded_sub_weight) 
+      rounded_weights[idx_to_adjust] <- rounded_weights[idx_to_adjust] + discrepancy
+    }
+    
+    df$subgroup_weight <- rounded_weights
+    return(df)
+  }
+  
+  # Split the data by Time and Group, apply the rounding function, and recombine.
+  corrected_data <- final_data %>%
+    dplyr::group_by(Time, Group) %>%
+    dplyr::group_split() %>%
+    lapply(adjust_rounding, digits = rounding_digits) %>%
+    dplyr::bind_rows()
+  
+  # --- 6. Finalize Output ---
+  result_df <- corrected_data %>%
+    dplyr::select(Time, Group, SubGroup, group_weight, subgroup_weight) %>%
+    dplyr::arrange(Time, Group, SubGroup)
+  
+  return(result_df)
 }
-
 #' Generate a Scenario with Randomly Sampled Group Weights
 #'
 #' This function creates a weighting scenario where group weights are sampled
@@ -146,53 +156,67 @@ generate_dominant_scenario <- function(dominant_group_name, dominance_factor, gr
 #'   ref_sub_weights = ref_w,
 #'   rounding_digits = 4
 #' )
-<<<<<<< HEAD
 
-generate_random_scenario <- function(group.mapping, ref_sub_weights, rounding_digits) {
-=======
-generate_random_scenario <- function(num_groups, ref_sub_weights, rounding_digits) {
-  group_weights <- normalize(runif(num_groups))
->>>>>>> parent of 9420626 (Modified to account for group mappings and changes over time)
+generate_random_scenario<- function(group.mapping, ref_sub_weights, rounding_digits) {
   
-  # --- CORRECTED SECTION: Calculate and Round Subgroup Weights per Group ---
-  final_subgroup_weights_list <- lapply(1:num_groups, function(i) {
-    # 1. Calculate unrounded weights for the current group
-    unrounded_group_specific_weights <- group_weights[i] * ref_sub_weights[[i]]
-    
-    # 2. Round them
-    rounded_group_specific_weights <- round(unrounded_group_specific_weights, digits = rounding_digits)
-    
-    # 3. Calculate discrepancy relative to the original group weight and adjust
-    discrepancy <- group_weights[i] - sum(rounded_group_specific_weights)
-    if (discrepancy != 0) {
-      idx_to_adjust <- which.max(rounded_group_specific_weights)
-      rounded_group_specific_weights[idx_to_adjust] <- rounded_group_specific_weights[idx_to_adjust] + discrepancy
-    }
-    
-    return(rounded_group_specific_weights)
-  })
+  # --- 1. Input Validation and Setup ---
+  if (!requireNamespace("dplyr", quietly = TRUE)) {
+    stop("Package 'dplyr' is required but is not installed.")
+  }
   
-  final_rounded_weights <- unlist(final_subgroup_weights_list)
+  all_groups <- unique(as.character(group.mapping$Group))
+  num_groups <- length(all_groups)
   
-  # --- CORRECTED SECTION: Build Final Data Frame ---
-  subgroups_per_group_vec <- sapply(ref_sub_weights, length)
-  group_ids <- rep(1:num_groups, times = subgroups_per_group_vec)
-  subgroup_ids <- unlist(lapply(subgroups_per_group_vec, seq_len))
+  # --- 2. Generate New Random Group Weights ---
+  # Group weights are sampled once and then applied across all timesteps.
+  random_group_weights <- normalize(runif(num_groups))
   
-  base_df <- data.frame(
-    group = group_ids,
-    subgroup = subgroup_ids,
-    subgroup_weight = final_rounded_weights
+  new_group_weights_df <- data.frame(
+    Group = all_groups,
+    group_weight = random_group_weights,
+    stringsAsFactors = FALSE
   )
   
-  # Calculate final group weights from the sum of corrected subgroup weights
-  group_weight_df <- aggregate(subgroup_weight ~ group, data = base_df, FUN = sum)
-  colnames(group_weight_df)[2] <- "group_weight"
+  # --- 3. Calculate Relative Subgroup Proportions from Reference Data ---
+  # This preserves the internal structure of each group at each timestep.
+  ref_data <- dplyr::left_join(ref_sub_weights, group.mapping, by = "SubGroup") %>%
+    dplyr::group_by(Time, Group) %>%
+    dplyr::mutate(relative_weight = Weight / sum(Weight)) %>%
+    dplyr::ungroup()
   
-  # Merge and reorder columns
-  final_df <- merge(base_df, group_weight_df, by = "group")
-  final_df <- final_df[, c("group", "subgroup", "group_weight", "subgroup_weight")]
+  # --- 4. Calculate Final Unrounded Subgroup Weights ---
+  # Apply the new random group weights to the relative subgroup weights.
+  final_data <- dplyr::left_join(ref_data, new_group_weights_df, by = "Group") %>%
+    dplyr::mutate(unrounded_sub_weight = group_weight * relative_weight)
   
-  return(final_df)
+  # --- 5. Apply Rounding and Correction ---
+  # This must be done for each group at each timestep to ensure the sum is correct.
+  adjust_rounding <- function(df, digits) {
+    target_sum <- df$group_weight[1]
+    
+    rounded_weights <- round(df$unrounded_sub_weight, digits = digits)
+    discrepancy <- target_sum - sum(rounded_weights)
+    
+    if (discrepancy != 0) {
+      idx_to_adjust <- which.max(df$unrounded_sub_weight) 
+      rounded_weights[idx_to_adjust] <- rounded_weights[idx_to_adjust] + discrepancy
+    }
+    
+    df$subgroup_weight <- rounded_weights
+    return(df)
+  }
+  
+  # Split the data by Time and Group, apply the rounding function, and recombine.
+  corrected_data <- final_data %>%
+    dplyr::group_by(Time, Group) %>%
+    dplyr::group_split() %>%
+    lapply(adjust_rounding, digits = rounding_digits) %>%
+    dplyr::bind_rows()
+  
+  # --- 6. Finalize Output ---
+  result_df <- corrected_data %>%
+    dplyr::select(Time, Group, SubGroup, group_weight, subgroup_weight) %>%
+    dplyr::arrange(Time, Group, SubGroup)
+  
+  return(result_df)
 }
-
