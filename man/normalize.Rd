@@ -5,14 +5,62 @@
 \title{Normalize a Numeric Vector to Sum to 1}
 \usage{
 normalize(x)
+
+normalize(x)
 }
 \arguments{
 \item{x}{A numeric vector.}
+
+\item{dominant_group_name}{A character string specifying the name of the group to be dominant.
+This name must exist in the \code{Group} column of the \code{group.mapping} data frame.}
+
+\item{dominance_factor}{The scaling factor (d) for dominance, where the dominant
+group's weight ($P_T$) is d times the sum of all other group weights ($P_{NT}$).}
+
+\item{group.mapping}{A data frame that maps subgroups to groups, with columns
+\code{Group} and \code{SubGroup}.}
+
+\item{ref_sub_weights}{A data frame of reference weights for each subgroup at
+each timestep, with columns \code{SubGroup}, \code{Time}, and \code{Weight}.}
+
+\item{rounding_digits}{The number of decimal places to round the final weights to.}
 }
 \value{
 A numeric vector of the same length as x where the elements sum to 1.
+
+A data frame with columns: \code{Time}, \code{Group}, \code{SubGroup}, \code{group_weight},
+and \code{subgroup_weight}.
 }
 \description{
 This is an internal helper function that takes a numeric vector and scales its
 elements so that they sum to 1.
+
+This function creates a weighting scenario where one group has a dominant
+proportion that is a multiple (\code{dominance_factor}) of the sum of all other group
+proportions. This dominance is applied across multiple timesteps, preserving the
+relative internal weighting of subgroups within each group at each timestep as
+defined in the reference weights. The function ensures the final subgroup
+weights are rounded and sum exactly to their target group weights.
+}
+\examples{
+# Example Data
+group_map <- data.frame(
+  Group = c("A", "A", "B", "B", "C"),
+  SubGroup = c("A1", "A2", "B1", "B2", "C1")
+)
+
+ref_weights <- data.frame(
+  SubGroup = rep(c("A1", "A2", "B1", "B2", "C1"), each = 2),
+  Time = rep(1:2, 5),
+  # Reference weights that sum to 1.0 for each timestep
+  Weight = c(0.1, 0.12, 0.4, 0.38, 0.2, 0.2, 0.2, 0.2, 0.1, 0.1) 
+)
+
+generate_dominant_scenario_modified(
+  dominant_group_name = "A",
+  dominance_factor = 4,
+  group.mapping = group_map,
+  ref_sub_weights = ref_weights,
+  rounding_digits = 4
+)
 }

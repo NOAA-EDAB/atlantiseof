@@ -14,7 +14,8 @@ make_eco_indicators_time(
   start.year = 1964,
   cloud = F,
   ref.run.dir = NULL,
-  survdat.data = NA
+  survdat.data = NA,
+  debug = FALSE
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ make_eco_indicators_time(
 \item{ref.run.dir}{Character String. Path to reference run directory. If NULL, no divergence metrics are calculated.}
 
 \item{survdat.data}{dataframe of survdat length,age,weight data}
+
+\item{debug}{Logical. If TRUE, prints progress messages. Default is FALSE.}
 }
 \value{
 dataframe of ecological indicators over time
