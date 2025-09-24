@@ -11,12 +11,15 @@
 #'@param survdat.data dataframe of survdat length,age,weight data
 #'@param cloud Logical. If TRUE, run on cloud Default is FALSE.
 #'@param ref.run.dir Character String. Path to reference run directory. If NULL, no divergence metrics are calculated.
+#'@param debug Logical. If TRUE, prints progress messages. Default is FALSE.
 #'
 #'@return dataframe of ecological indicators over time
 #'
 #'@export
 
-make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, dietSource, timeRange, start.year = 1964, cloud = F, ref.run.dir = NULL, survdat.data = NA){
+make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, dietSource, timeRange, start.year = 1964, cloud = F, ref.run.dir = NULL, survdat.data = NA, debug = FALSE){
+  
+  if(debug) message("DEBUG: Starting make_eco_indicators_time function.")
   
   # Load the groups.csv file
   stock.ref = atlantiseof::get_bmsy_ss(fgs = fgs.file, default.bmsy.frac = 0.4) |>
@@ -54,12 +57,14 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
       dplyr::mutate(catch = 0)
   }
   
+  if(debug) message("DEBUG: Biomass and Catch data loaded.")
+  
   # species x year dataframe
   spp.df = bio.df |>
     dplyr::left_join(catch.df, by = c("Code", "year")) |>
     dplyr::mutate(catch.biomass = catch / biomass)|>
     dplyr::left_join(groups, by = "Code")
-    # dplyr::select(-bmsy.y, -bmsy.x) # Remove bmsy columns to avoid confusion
+  # dplyr::select(-bmsy.y, -bmsy.x) # Remove bmsy columns to avoid confusion
   
   # Get all species with non-zero catch for BMSY estimation
   is.fished = spp.df |>
@@ -79,11 +84,13 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     }
   }
   
+  if(debug) message("DEBUG: BMSY estimation complete.")
+  
   # Add overfished status
   spp.df = spp.df |>
     dplyr::left_join(spp.bmsy, by = "Code") |>
     dplyr::mutate(bmsy = dplyr::coalesce(bmsy.x,bmsy.y),
-                  overfished = ifelse(biomass > bmsy, 0, 1)) |> 
+                  overfished = ifelse(biomass > bmsy, 0, 1)) |>
     dplyr::select(-bmsy.x,-bmsy.y)
   
   # Biomass and catch metrics
@@ -102,6 +109,11 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
       prop.bio.predator = predator.bio / bio.tot
     )|>
     dplyr::select(-c(pelagic.bio, predator.bio))
+  
+  if(debug){
+    message("DEBUG: Base ecological indicators (biomass, catch, overfished proportion) calculated.")
+    print(head(eco.df))
+  }
   
   # --- Robust Calculation Blocks ---
   
@@ -137,6 +149,11 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     expand.grid(year = timeRange, Code = groups$Code) |> dplyr::mutate(trophicLevel = NA)
   })
   
+  if(debug){
+    message("DEBUG: Trophic level calculation complete.")
+    print(head(tl.df))
+  }
+  
   # Calculate Mean Trophic level of catch by year
   mean.tl <- tryCatch({
     spp.df |>
@@ -151,6 +168,11 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     data.frame(year = timeRange, mean.tl.catch = NA, mean.tl.bio = NA)
   })
   
+  if(debug){
+    message("DEBUG: Mean trophic level of catch and biomass calculated.")
+    print(head(mean.tl))
+  }
+  
   # Calculate cumulative biomass indices
   cum.bio <- tryCatch({
     atlantiseof::calc_cum_bio(bio.df = bio.df, tl.df = tl.df, show.plot = F)
@@ -158,6 +180,11 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     warning("Failed to calculate cumulative biomass. Returning NAs. Error: ", e$message)
     data.frame(year = timeRange, steep = NA, bio_inf = NA, tl_inf = NA, b1_param = NA, b2_param = NA, c_param = NA, d_param  = NA, e_param = NA) # Empty df with year for joining
   })
+  
+  if(debug){
+    message("DEBUG: Cumulative biomass indices calculated.")
+    print(head(cum.bio))
+  }
   
   # Calculate fish productivity
   fish.prop <- tryCatch({
@@ -168,6 +195,11 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     warning("Failed to calculate fish productivity. Returning NAs. Error: ", e$message)
     data.frame(year.ref = timeRange,small.large.ratio.anom.mean  = NA) # Empty df with join key
   })
+  
+  if(debug){
+    message("DEBUG: Fish productivity calculated.")
+    print(head(fish.prop))
+  }
   
   # Calculate divergence metrics
   diverge <- tryCatch({
@@ -190,6 +222,11 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     data.frame(year = timeRange, KL_divergence = NA, JS_divergence = NA, Jeffreys_divergence = NA)
   })
   
+  if(debug){
+    message("DEBUG: Divergence metrics calculated.")
+    print(head(diverge))
+  }
+  
   # Calculate foodweb metrics
   foodweb.df <- tryCatch({
     foodweb = atlantiseof::calc_foodweb(atl.dir = atl.dir, dietSource = dietSource, show.plot = F)
@@ -211,7 +248,7 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
                modularity_undirected = NA,
                redundancy_proxy = NA,
                avg_jaccard_similarity = NA,
-               ascendancy = NA, 
+               ascendancy = NA,
                capacity = NA,
                coherence = NA,
                overhead = NA,
@@ -219,6 +256,11 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
                resilience_eigenvalue = NA,
                reactive_ascendancy = NA) # Empty df with year for joining
   })
+  
+  if(debug){
+    message("DEBUG: Foodweb metrics calculated.")
+    print(head(foodweb.df))
+  }
   
   # --- Final Assembly ---
   
@@ -229,6 +271,13 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     dplyr::left_join(fish.prop, by = c('year' = 'year.ref')) |>
     dplyr::left_join(diverge, by = "year") |>
     dplyr::left_join(foodweb.df, by = "year")
+  
+  if(debug){
+    message("DEBUG: All indicator dataframes have been joined.")
+    print(head(eco.df))
+    message("DEBUG: Final dimensions of eco.df: ", paste(dim(eco.df), collapse = " x "))
+    message("DEBUG: Function finished. Returning final dataframe.")
+  }
   
   # Return list of all indicators
   return(eco.df)
