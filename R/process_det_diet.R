@@ -42,6 +42,8 @@ process_det_diet <- function(atl.dir, detDietfile, outputname, cloud =F) {
     )
     
     system(cmd)
+    
+    system(paste0('sudo chomd 775 ',atl.dir, outputname))
   }else{
     system2('gzip',args = c('-k',paste0(atl.dir,detDietfile)))
     #then remove zeros and save ans another zip
