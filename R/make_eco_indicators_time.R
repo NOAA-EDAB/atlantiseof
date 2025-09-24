@@ -208,7 +208,7 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     } else {
       ref.prop = atlantiseof::calc_bio_prop(ref.run.dir, fgs.file = fgs.file, timeRange = 30:80)
     }
-    atlantiseof::calc_divergence(bio.df = bio.df, ref.prop = ref.prop, show.plot = F) |>
+    atlantiseof::calc_divergence(bio.df = bio.df, ref.prop = ref.prop, show.plot = F, fgs.file = fgs.file,atl.dir = atl.dir) |>
       dplyr::mutate(year = floor(Time/365)) |>
       dplyr::filter(year %in% timeRange) |>
       dplyr::group_by(year) |>
@@ -229,7 +229,12 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
   
   # Calculate foodweb metrics
   foodweb.df <- tryCatch({
-    foodweb = atlantiseof::calc_foodweb(atl.dir = atl.dir, dietSource = dietSource, show.plot = F)
+    foodweb = atlantiseof::calc_foodweb(atl.dir = atl.dir,
+                                        param.dir = param.dir,
+                                        dietSource = dietSource,
+                                        fgs.file = fgs.file,
+                                        timeRange = timeRange,
+                                        show.plot = F)
     foodweb$metric_ts |>
       dplyr::mutate(year = floor(time/365)) |>
       dplyr::filter(year %in% timeRange) |>
