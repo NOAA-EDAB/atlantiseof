@@ -208,7 +208,11 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     } else {
       ref.prop = atlantiseof::calc_bio_prop(ref.run.dir, fgs.file = fgs.file, timeRange = 30:80)
     }
-    atlantiseof::calc_divergence(bio.df = bio.df, ref.prop = ref.prop, show.plot = F, fgs.file = fgs.file,atl.dir = atl.dir) |>
+    atlantiseof::calc_divergence(bio.df = bio.df,
+                                 ref.prop = ref.prop,
+                                 show.plot = F,
+                                 fgs.file = fgs.file,
+                                 atl.dir = atl.dir) |>
       dplyr::mutate(year = floor(Time/365)) |>
       dplyr::filter(year %in% timeRange) |>
       dplyr::group_by(year) |>

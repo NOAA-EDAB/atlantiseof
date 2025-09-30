@@ -42,3 +42,21 @@ atlantiseof::plot_ind_pca(data.dir = 'D:/data/catch_thresholds_eof_3/output/',
 
 readRDS(file.path(out.dir, 'catch_thresholds_eof_3_eof_threshold.rds'))
 pca =readRDS(file.path(out.dir, 'pca_result.rds'))
+
+foodweb = atlantiseof::calc_foodweb(atl.dir = atl.dir,
+                                    param.dir = param.dir,
+                                    dietSource = dietSource,
+                                    fgs.file = fgs.file,
+                                    timeRange = timeRange,
+                                    bySpecies = T,
+                                    show.plot = F) 
+foodweb.mean = foodweb |>
+  dplyr::filter(time >= (20*365)) |> 
+  dplyr::group_by(species) |> 
+  dplyr::summarise(relative_total_impact = mean(relative_total_impact,na.rm=T),
+                   keystone_idx1 = mean(keystone_idx1,na.rm=T),
+                   keystone_idx2 = mean(keystone_idx2,na.rm=T),
+                   keystone_idx3 = mean(keystone_idx3,na.rm=T)) |> 
+  dplyr::mutate(relative_total_impact_scaled = relative_total_impact/max(relative_total_impact))
+write.csv(foodweb.mean,here::here('data-raw','ref_foodweb_keystone_summary.csv'),row.names=F)
+  
