@@ -95,27 +95,34 @@ est_trophic_level_time <- function(param.dir = "C:/Users/andrew.beet/Documents/m
     fji <- rbind(fji,added)
 
 
-    # create matrix. predator in rows, prey in rows. fij in cell
-    tt <- tidyr::pivot_wider(fji,names_from = prey,values_from = fji)
-    # reorder to form a square matrix
-    missing_cols <- setdiff(tt$species, colnames(tt))
+    # 1. Pivot to wide format (Predators in Rows, Prey in Cols)
+    tt <- tidyr::pivot_wider(fji, names_from = prey, values_from = fji, values_fill = 0)
     
+    # 2. The Master List of species is the 'species' column (Rows)
+    # (The previous 'added' logic ensured all basal prey are included here)
+    master_species_list <- tt$species
+    
+    # 3. Identify which species are missing from the columns (Top Predators)
+    missing_cols <- setdiff(master_species_list, colnames(tt))
+    
+    # 4. Add missing columns filled with 0
     if(length(missing_cols) > 0){
       tt[missing_cols] <- 0
     }
     
-    # Reorder columns to match row order (species column)
-    newtt <- tt %>% 
-      dplyr::relocate(c("species", dplyr::all_of(tt$species))) %>%
-      tibble::column_to_rownames(., var="species")
-
-    # replace NAs with zero
-    newtt[is.na(newtt)] <- 0
-    newtt <- as.matrix(newtt)
-
-    #invert the matrix
+    # 5. Strict Ordering and Matrix Conversion
+    # We select columns exactly matching the order of the species rows
+    newtt <- tt %>%
+      dplyr::select(dplyr::all_of(master_species_list)) %>%
+      as.matrix()
+    
+    # 6. Assign rownames matches the columns
+    rownames(newtt) <- master_species_list
+    
+    # 7. Invert the matrix
+    # Now newtt is guaranteed to be N x N, so diag(N) - (N x N) works.
     oneminusf <- diag(nrow(newtt)) - newtt
-    TLi <- solve(oneminusf,rep(1,nrow(tt)))
+    TLi <- solve(oneminusf, rep(1, nrow(newtt)))
     TLtime[,ii] <- TLi
 
 
