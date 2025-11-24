@@ -98,8 +98,16 @@ est_trophic_level_time <- function(param.dir = "C:/Users/andrew.beet/Documents/m
     # create matrix. predator in rows, prey in rows. fij in cell
     tt <- tidyr::pivot_wider(fji,names_from = prey,values_from = fji)
     # reorder to form a square matrix
-    newtt <- tt %>% dplyr::relocate(c("species",dplyr::pull(tt,species))) %>%
-      tibble::column_to_rownames(.,var="species")
+    missing_cols <- setdiff(tt$species, colnames(tt))
+    
+    if(length(missing_cols) > 0){
+      tt[missing_cols] <- 0
+    }
+    
+    # Reorder columns to match row order (species column)
+    newtt <- tt %>% 
+      dplyr::relocate(c("species", dplyr::all_of(tt$species))) %>%
+      tibble::column_to_rownames(., var="species")
 
     # replace NAs with zero
     newtt[is.na(newtt)] <- 0
