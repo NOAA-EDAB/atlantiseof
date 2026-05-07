@@ -18,7 +18,7 @@
 #'
 
 make_reference_state = function(param.dir, atl.dir, group.index, fgs.file,
-                                dietSource, timeRange, cloud = FALSE, desired.p = c(0.25,0.75)) {
+                                dietSource, timeRange, cloud = FALSE, desired.p = c(0.25,0.75),...) {
   
   # Get mean status from reference run
   # eco.ind = atlantiseof::make_eco_indicators(
@@ -37,7 +37,8 @@ make_reference_state = function(param.dir, atl.dir, group.index, fgs.file,
     group.index = group.index,
     fgs.file = fgs.file,
     dietSource = dietSource,
-    timeRange = 1:100
+    timeRange = timeRange,
+    survdat.data = survdat.data
   )
   
   eco.ind = eco.ind.year |> 

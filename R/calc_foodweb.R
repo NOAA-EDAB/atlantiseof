@@ -327,7 +327,7 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
           return("Oscillating")
         }
       }, error = function(e) { message(paste("STL failed for", name, ":", e$message)) })
-      if (sd(values, na.rm = TRUE) / (mean(values, na.rm = TRUE,na.rm = T)+1E-12) < 0.1) { return("Stable") }
+      if (sd(values, na.rm = TRUE) / (mean(values, na.rm = TRUE)+1E-12) < 0.1) { return("Stable") }
       model <- lm(values ~ time)
       slope <- summary(model)$coefficients[2, 1]
       p_value <- summary(model)$coefficients[2, 4]

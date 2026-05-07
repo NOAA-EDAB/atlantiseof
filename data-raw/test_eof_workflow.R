@@ -24,7 +24,7 @@ param.dir      <- github_root
 atl.dir        <- atl_root
 ref.run.dir    <- atl.dir
 data.dir       <- run_data_root
-out.dir        <- file.path(data.dir, "output")
+out.dir        <- paste0(data.dir, "output/")
 
 # Input files
 fgs.file       <- file.path(param.dir, "neus_groups.csv")
@@ -52,7 +52,7 @@ plot.pca.dir      <- here::here("figures", "eof_thresholds_3", "")
 # ============================================================================ #
 
 setup_data <- read.csv(setup.file)
-survdat    <- readRDS(survdat.file)
+survdat.data    <- readRDS(survdat.file)
 
 # ============================================================================ #
 # 4. WORKFLOW EXECUTION
@@ -72,11 +72,11 @@ range(ref.thresh$threshold, na.rm = TRUE)
 
 # Make Reference and Desired States
 atlantiseof::make_reference_state(
-  param.dir, atl.dir, group.index, fgs.file, dietSource, 20:60, out.name, desired.p
+  param.dir, atl.dir, group.index, fgs.file, dietSource,timeRange =  20:60, out.name, desired.p, survdat.data = survdat.data
 )
 
 atlantiseof::make_desired_state_distance(
-  param.dir, atl.dir, dietSource, ref.state.file, data.dir, out.dir, run.prefix, setup_data
+  param.dir, atl.dir, dietSource, ref.state.file, data.dir, out.dir, run.prefix, setup.file,debug =T
 )
 
 # Plotting

@@ -9,101 +9,146 @@
 #'@return dataframe of eco indicators by year
 #'
 #'@export
-
-plot_ind_pca = function(data.dir, ref.ind.file, ref.state.file,figure.dir){
+plot_ind_pca = function(data.dir, ref.ind.file, ref.state.file, figure.dir){
   
-  #Read in data
-  observations_df = readRDS(ref.ind.file) |> 
-    dplyr::arrange(run) |> 
-    dplyr::select(run,year,Variable,state.value) |> 
-    #convert from long to wide
+  # Read in data
+  observations_df = base::readRDS(ref.ind.file) |> 
+    dplyr::filter(Variable != 'reactive_ascendancy')
+  
+  var.keep = base::c('year', 'run.id', base::sort(base::unique(observations_df$Variable)))
+  
+  observations_df = observations_df |> 
+    dplyr::arrange(run.id) |> 
+    dplyr::select(run.id, year, Variable, state.value) |> 
+    # convert from long to wide
     tidyr::pivot_wider(names_from = Variable, values_from = state.value) |> 
-    dplyr::select(-reactive_ascendancy) |> 
-    na.omit()
-    #filter to only relevant variables
+    stats::na.omit()
   
-  #variables to keep
-  var.keep = c('year','run','bio.tot','catch.tot','prop.of','prop.bio.pelagic','mean.tl.bio',
-               'steep','bio_inf','tl_inf',
-               'small.large.ratio.anom.mean',
-               'JS_divergence',
-               'connectance','mean_in_degree','network_betweenness_centralization',
-               'avg_jaccard_similarity','ascendancy','capacity','resilience_eigenvalue')
   observations_df = observations_df |> dplyr::select(dplyr::all_of(var.keep))
-  metric_names_ordered <- colnames(observations_df)
-  metrics_for_projection <- metric_names_ordered[!(metric_names_ordered %in% c("year","run"))]
-
-  #Get reference state information  
-  ref.state = readRDS(ref.state.file)
   
-  # ref.state.year = readRDS(ref.state.year.file) |> 
-  #   dplyr::select(-year) |> 
-  #   dplyr::select(dplyr::all_of(metric_names_ordered))
-  # 
-  ref.state <- ref.state[match(metric_names_ordered, ref.state$Variable), ] |> 
-    dplyr::filter(!is.na(Variable))
+  # --- NEW: Identify and remove columns with zero variance ---
+  # Isolate just the data columns (ignore year and run.id)
+  data_cols = base::setdiff(base::colnames(observations_df), base::c("year", "run.id"))
+  
+  # Calculate variance for each column
+  col_vars = base::apply(observations_df[, data_cols, drop = FALSE], 2, stats::var)
+  
+  # Keep only columns where variance is greater than 0
+  valid_cols = base::names(col_vars[col_vars > 0])
+  
+  # Re-subset the dataframe to drop the flatlined indicators
+  observations_df = observations_df |> 
+    dplyr::select(year, run.id, dplyr::all_of(valid_cols))
+  # -----------------------------------------------------------
+  
+  metric_names_ordered <- base::colnames(observations_df)
+  metrics_for_projection <- metric_names_ordered[!(metric_names_ordered %in% base::c("year","run.id"))]
+  
+  # Get reference state information  
+  ref.state = base::readRDS(ref.state.file)
+  
+  ref.state <- ref.state[base::match(metric_names_ordered, ref.state$Variable), ] |> 
+    dplyr::filter(!base::is.na(Variable))
   
   
-  #Define desired state from reference state
+  # Define desired state from reference state
   desired.lower.base = ref.state$desired.min
   desired.upper.base = ref.state$desired.max
   
-  target_ranges_df = matrix(c(desired.lower.base, desired.upper.base), ncol = 2, byrow = F) |> t() |> as.data.frame()
-  rownames(target_ranges_df) <- c("lower", "upper")
-  colnames(target_ranges_df) = metrics_for_projection # Exclude 'year' from metric names
+  target_ranges_df = base::matrix(base::c(desired.lower.base, desired.upper.base), ncol = 2, byrow = FALSE) |> 
+    base::t() |> 
+    base::as.data.frame()
   
-  #Run PCA
+  base::rownames(target_ranges_df) <- base::c("lower", "upper")
+  base::colnames(target_ranges_df) = metrics_for_projection # Exclude 'year' from metric names
+  
+  # Run PCA
   years = observations_df$year
-  runs = observations_df$run
-  pca_data = dplyr::select(observations_df,-year, -run)
+  runs = observations_df$run.id
+  pca_data = dplyr::select(observations_df, -year, -run.id)
   
-  pca_result <- prcomp(pca_data, scale. = TRUE, center = TRUE)
-  observations_pca <- data.frame(
+  pca_result <- stats::prcomp(pca_data, scale. = TRUE, center = TRUE)
+  observations_pca <- base::data.frame(
     year = years,
-    run = runs,
+    run.id = runs,
     PC1 = pca_result$x[, 1],
     PC2 = pca_result$x[, 2]
   )
   
-  saveRDS(pca_result, file = paste0(data.dir, 'pca_result.rds'))
+  base::saveRDS(pca_result, file = base::paste0(data.dir, 'pca_result.rds'))
   
-  #Rescale reference state to PCA space
- 
+  # Rescale reference state to PCA space
   # Create a list where each element is a vector of [lower, upper] for a metric
-  # Ensure grid_args creation matches the column order of observations_df
-  grid_args <- lapply(metrics_for_projection, function(metric_name) {
-    c(target_ranges_df["lower", metric_name], target_ranges_df["upper", metric_name])
-  })
-  # Names are also set using the filtered list
-  names(grid_args) <- metrics_for_projection
+  # grid_args <- base::lapply(metrics_for_projection, function(metric_name) {
+  #   base::c(target_ranges_df["lower", metric_name], target_ranges_df["upper", metric_name])
+  # })
+  # 
+  # corner_df <- base::do.call(base::expand.grid, grid_args)
+  # corner_matrix <- base::as.matrix(corner_df)
+  # 
+  # scaled_corners <- base::scale(corner_matrix,
+  #                               center = pca_result$center,
+  #                               scale = pca_result$scale)
+  # 
+  # projected_corners <- base::as.data.frame(scaled_corners %*% pca_result$rotation[, 1:2])
+  # base::colnames(projected_corners) <- base::c("PC1", "PC2")
+  # 
+  # 
+  # # Calculate the convex hull of the projected corners to define the target space boundary
+  # hull_indices <- geometry::convhulln(projected_corners[, base::c("PC1", "PC2")])
+  # hull_points <- projected_corners[hull_indices, ]
+  # ---------------------------------------------------------
+  # EFFICIENT TARGET SPACE PROJECTION (Angular Sweep Method)
+  # ---------------------------------------------------------
   
-  # The rest of your code for creating and projecting the corners will now work correctly
-  corner_df <- do.call(expand.grid, grid_args)
-  corner_matrix <- as.matrix(corner_df)
+  # 1. Extract and pre-scale the bounds using the PCA center and scale
+  lower_bounds <- base::as.numeric(target_ranges_df["lower", metrics_for_projection])
+  upper_bounds <- base::as.numeric(target_ranges_df["upper", metrics_for_projection])
   
-  scaled_corners <- scale(corner_matrix,
-                          center = pca_result$center,
-                          scale = pca_result$scale)
+  pca_center <- pca_result$center[metrics_for_projection]
+  pca_scale <- pca_result$scale[metrics_for_projection]
   
-  projected_corners <- as.data.frame(scaled_corners %*% pca_result$rotation[, 1:2])
-  colnames(projected_corners) <- c("PC1", "PC2")
+  scaled_lower <- (lower_bounds - pca_center) / pca_scale
+  scaled_upper <- (upper_bounds - pca_center) / pca_scale
   
+  # 2. Define angles to sweep (e.g., 360 degrees) to find the extreme outer boundary
+  angles <- base::seq(0, 2 * base::pi, length.out = 360)
+  W <- pca_result$rotation[metrics_for_projection, 1:2]
   
-  # Calculate the convex hull of the projected corners to define the target space boundary
-  hull_indices <- geometry::convhulln(projected_corners[, c("PC1", "PC2")])
+  # 3. Create an empty matrix to hold the extreme corners in scaled original space
+  extreme_scaled_points <- base::matrix(NA, nrow = base::length(angles), ncol = base::length(metrics_for_projection))
+  
+  for (i in 1:base::length(angles)) {
+    # Define a 2D direction vector for the current angle
+    dir_2d <- base::c(base::cos(angles[i]), base::sin(angles[i]))
+    
+    # Calculate how each dimension contributes to this 2D direction
+    w_dir <- W %*% dir_2d
+    
+    # If the contribution is positive, take the upper bound to maximize the distance. 
+    # If negative, take the lower bound.
+    selected_pt <- base::ifelse(w_dir > 0, scaled_upper, scaled_lower)
+    extreme_scaled_points[i, ] <- selected_pt
+  }
+  
+  # 4. Project these specific extreme points into PCA space
+  projected_corners <- base::as.data.frame(extreme_scaled_points %*% W)
+  base::colnames(projected_corners) <- base::c("PC1", "PC2")
+  
+  # 5. Calculate the convex hull of these projected boundaries
+  hull_indices <- geometry::convhulln(base::as.matrix(projected_corners))
   hull_points <- projected_corners[hull_indices, ]
   
   # Order hull points for plotting
-  hull_centroid_x <- mean(hull_points$PC1)
-  hull_centroid_y <- mean(hull_points$PC2)
-  angles <- atan2(hull_points$PC2 - hull_centroid_y, hull_points$PC1 - hull_centroid_x)
-  target_hull <- hull_points[order(angles), ]
-  target_hull <- rbind(target_hull, target_hull[1, ]) # Close the polygon
+  hull_centroid_x <- base::mean(hull_points$PC1)
+  hull_centroid_y <- base::mean(hull_points$PC2)
+  angles <- base::atan2(hull_points$PC2 - hull_centroid_y, hull_points$PC1 - hull_centroid_x)
+  target_hull <- hull_points[base::order(angles), ]
+  target_hull <- base::rbind(target_hull, target_hull[1, ]) # Close the polygon
   
   
   # Plot PCA
-  
-  variance_explained <- round((pca_result$sdev^2 / sum(pca_result$sdev^2)) * 100, 2)
+  variance_explained <- base::round((pca_result$sdev^2 / base::sum(pca_result$sdev^2)) * 100, 2)
   
   p <- ggplot2::ggplot() +
     # Plot the target space polygon
@@ -112,32 +157,23 @@ plot_ind_pca = function(data.dir, ref.ind.file, ref.state.file,figure.dir){
                           fill = "lightgreen", alpha = 0.5, color = "darkgreen",
                           linetype = "dashed", linewidth = 0.8) +
     
-    # CRITICAL: Plot the observations and map color to 'year'
-    # ggplot2::geom_point(data = observations_pca,
-    #                     ggplot2::aes(x = PC1, y = PC2, color = year),
-    #                     alpha = 0.8, size = 3) +
-    
     # Optionally, add a path to show the trajectory over time
     ggplot2::geom_path(data = observations_pca,
-                       ggplot2::aes(x = PC1, y = PC2, color = factor(run)), # group=1 connects all points
+                       ggplot2::aes(x = PC1, y = PC2, color = base::factor(run.id)), 
                        alpha = 0.5) +
     
     # Use a sequential color scale appropriate for time
     ggplot2::scale_color_viridis_d() +
-    ggplot2::guides()
+    ggplot2::guides() + # <-- Added the missing '+' here!
     ggplot2::labs(
       title = "PCA Trajectory of Observations Over Time",
       subtitle = "Green polygon represents the projected target space",
-      x = paste0("Principal Component 1 (", variance_explained[1], "%)"),
-      y = paste0("Principal Component 2 (", variance_explained[2], "%)"),
-      color = "Year" # Update the legend title
+      x = base::paste0("Principal Component 1 (", variance_explained[1], "%)"),
+      y = base::paste0("Principal Component 2 (", variance_explained[2], "%)"),
+      color = "Year" 
     ) +
-    ggplot2::coord_fixed(ratio = 1) + # Essential for correct PCA interpretation
+    ggplot2::coord_fixed(ratio = 1) + 
     ggplot2::theme_bw()
+  
   p
 }
-
-# data.dir = 'D:/catch_thresholds_eof_3/output/'
-# ref.ind.file = paste0(data.dir,'catch_thresholds_eof_3_run_eco_ind.rds')
-# ref.state.file = here::here('data-raw','ref_eco_state.rds')
-# ref.state.year.file = here::here('data-raw','ref_eco_state_year.rds')

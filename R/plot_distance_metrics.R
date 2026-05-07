@@ -33,12 +33,12 @@ plot_distance_metrics = function(figure.dir,distance.file,thresholds.file,ref.st
   ref.threshold.max = max(run.thresholds.df$threshold,na.rm=T)
   
   #identify the catch scalar closest to the mean link threshold
-  scale.min.thresh =run.distance.df$catch.scalar[which.min(abs(run.distance.df$catch.threshold-ref.threshold.min))]
-  scale.max.thresh =run.distance.df$catch.scalar[which.min(abs(run.distance.df$catch.threshold-ref.threshold.max))]
+  scale.min.thresh =run.distance.df$catch.scalar[which.min(abs(run.distance.df$eof_threshold-ref.threshold.min))]
+  scale.max.thresh =run.distance.df$catch.scalar[which.min(abs(run.distance.df$eof_threshold-ref.threshold.max))]
   
   #plot1: Distance as a function of scalars of ref.threshold.mean
-  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = year, y = log(distance.ref), color = run))+
-    ggplot2::geom_line(ggplot2::aes(color = run, group = run))+
+  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = year, y = log(distance.ref), color = run.id))+
+    ggplot2::geom_line(ggplot2::aes(color = run.id, group = run.id))+
     ggplot2::scale_color_viridis_c()+
     ggplot2::geom_point()+
     # ggplot2::facet_wrap(~year,scale = 'free_y')+
@@ -50,7 +50,7 @@ plot_distance_metrics = function(figure.dir,distance.file,thresholds.file,ref.st
   ggplot2::ggsave(filename = paste0(figure.dir,'/state_distance_time.png'),width = 12, height = 8, dpi = 300)
   
   #plot2: Distance as a function of catch forcing scalar
-  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = catch.scalar, y = distance.ref,group = run, color = run))+
+  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = catch.scalar, y = distance.ref,group = run.id, color = run.id))+
     ggplot2::geom_line()+
     ggplot2::geom_point()+
     ggplot2::scale_color_viridis_c()+
@@ -70,7 +70,7 @@ plot_distance_metrics = function(figure.dir,distance.file,thresholds.file,ref.st
       width = 10, height = 10, res = 300,units = 'in', pointsize = 12, bg = 'white')
   plot3D::scatter3D(x = run.distance.df$catch.tot.rel, y = run.distance.df$catch.scalar, z = run.distance.df$distance.ref,
             type = "p", # "l" for line, "p" for points, "b" for both
-            colvar = run.distance.df$run, # Color by run,
+            colvar = run.distance.df$run.id, # Color by run,
             col = NULL,
             xlab = "realized catch",
             ylab = 'catch scalar',
@@ -81,12 +81,12 @@ plot_distance_metrics = function(figure.dir,distance.file,thresholds.file,ref.st
             ticktype = "detailed", # Show detailed ticks on axes
             pch = 19, # Point character (if using points)
             cex = 0.8, # Point size (if using points)
-            clab = c('Run')
+            clab = c('Run ID')
   )
   dev.off()
   
   #Plot 4: Total catch relative to reference model as a function of catch forcing scalar
-  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = catch.scalar, y = catch.tot.rel, color = run, group = run))+
+  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = catch.scalar, y = catch.tot.rel, color = run.id, group = run.id))+
     ggplot2::geom_line()+
     ggplot2::scale_color_viridis_c()+
     ggplot2::geom_point()+
@@ -96,8 +96,8 @@ plot_distance_metrics = function(figure.dir,distance.file,thresholds.file,ref.st
   ggplot2::ggsave(filename = paste0(figure.dir,'/catch_scalar_realized.png'),width = 12, height = 8, dpi = 300)
     
   #plot5: Distance as a function of scalars of base run total catch (realized)
-  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = rel.ref.catch, y = distance.ref, color = run, group = run))+
-    ggplot2::geom_line(ggplot2::aes(color = run))+
+  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = rel.ref.catch, y = distance.ref, color = run.id, group = run.id))+
+    ggplot2::geom_line(ggplot2::aes(color = run.id))+
     ggplot2::scale_color_viridis_c()+
     ggplot2::geom_point()+
     ggplot2::ylab('Distance from Reference Model State')+
@@ -107,7 +107,7 @@ plot_distance_metrics = function(figure.dir,distance.file,thresholds.file,ref.st
   ggplot2::ggsave(filename = paste0(figure.dir,'/state_distance_rel_ref_catch.png'),width = 12, height = 8, dpi = 300)
   
   #plot6: First difference of distance as a function of catch scalar
-  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = catch.scalar, y = incremental.distance.ref, color = run, group = run))+
+  ggplot2::ggplot(run.distance.df, ggplot2::aes(x = catch.scalar, y = incremental.distance.ref, color = run.id, group = run.id))+
     ggplot2::geom_line()+
     ggplot2::scale_color_viridis_c()+
     ggplot2::geom_point()+

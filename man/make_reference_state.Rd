@@ -13,7 +13,8 @@ make_reference_state(
   dietSource,
   timeRange,
   cloud = FALSE,
-  desired.p = c(0.25, 0.75)
+  desired.p = c(0.25, 0.75),
+  ...
 )
 }
 \arguments{

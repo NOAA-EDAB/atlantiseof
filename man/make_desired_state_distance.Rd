@@ -2,7 +2,7 @@
 % Please edit documentation in R/make_desired_state_distance.R
 \name{make_desired_state_distance}
 \alias{make_desired_state_distance}
-\title{Distance fromd Desired State
+\title{Distance from Desired State
 Calculates the multivariate distance of observations from desired state refd on multiple atlantis runs/observations}
 \usage{
 make_desired_state_distance(
@@ -13,7 +13,9 @@ make_desired_state_distance(
   data.dir,
   out.dir,
   run.prefix,
-  setup.file
+  setup.file,
+  cores = parallel::detectCores() - 1,
+  debug = FALSE
 )
 }
 \arguments{
@@ -32,11 +34,15 @@ make_desired_state_distance(
 \item{run.prefix}{Character String. Prefix for the atlantis runs you're looking to compare}
 
 \item{setup.file}{Character String. Path to setup file for the atlantis runs you're looking to compare}
+
+\item{cores}{Integer. Number of cores to use for parallel processing (defaults to system cores - 1)}
+
+\item{debug}{Logical. If TRUE, runs length-matching diagnostics before calculating distance.}
 }
 \value{
 dataframe of eco indicators by year
 }
 \description{
-Distance fromd Desired State
+Distance from Desired State
 Calculates the multivariate distance of observations from desired state refd on multiple atlantis runs/observations
 }

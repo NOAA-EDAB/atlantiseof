@@ -27,7 +27,8 @@ Imports:
     atlantistools,
     ecodata,
     stocksmart,
-    NEFSCspatial
+    NEFSCspatial,
+    foreach
 Remotes:
     NOAA-EDAB/atlantisdiagnostics,
     NOAA-EDAB/stocksmart,
