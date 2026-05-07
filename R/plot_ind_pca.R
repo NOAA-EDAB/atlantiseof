@@ -77,26 +77,6 @@ plot_ind_pca = function(data.dir, ref.ind.file, ref.state.file, figure.dir){
   
   base::saveRDS(pca_result, file = base::paste0(data.dir, 'pca_result.rds'))
   
-  # Rescale reference state to PCA space
-  # Create a list where each element is a vector of [lower, upper] for a metric
-  # grid_args <- base::lapply(metrics_for_projection, function(metric_name) {
-  #   base::c(target_ranges_df["lower", metric_name], target_ranges_df["upper", metric_name])
-  # })
-  # 
-  # corner_df <- base::do.call(base::expand.grid, grid_args)
-  # corner_matrix <- base::as.matrix(corner_df)
-  # 
-  # scaled_corners <- base::scale(corner_matrix,
-  #                               center = pca_result$center,
-  #                               scale = pca_result$scale)
-  # 
-  # projected_corners <- base::as.data.frame(scaled_corners %*% pca_result$rotation[, 1:2])
-  # base::colnames(projected_corners) <- base::c("PC1", "PC2")
-  # 
-  # 
-  # # Calculate the convex hull of the projected corners to define the target space boundary
-  # hull_indices <- geometry::convhulln(projected_corners[, base::c("PC1", "PC2")])
-  # hull_points <- projected_corners[hull_indices, ]
   # ---------------------------------------------------------
   # EFFICIENT TARGET SPACE PROJECTION (Angular Sweep Method)
   # ---------------------------------------------------------
