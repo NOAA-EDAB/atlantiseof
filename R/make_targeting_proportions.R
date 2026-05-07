@@ -59,12 +59,6 @@ normalize <- function(x) {
   return(x / sum(x, na.rm = TRUE))
 }
 
-# Helper function to normalize a vector to sum to 1
-normalize <- function(x) {
-  if (sum(x, na.rm = TRUE) == 0) return(x)
-  return(x / sum(x, na.rm = TRUE))
-}
-
 generate_dominant_scenario <- function(dominant_group_name, dominance_factor, group.mapping, ref_sub_weights, rounding_digits) {
   if (!requireNamespace("dplyr", quietly = TRUE)) {
     stop("Package 'dplyr' is required but is not installed.")

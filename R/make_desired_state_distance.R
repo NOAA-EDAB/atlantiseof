@@ -19,8 +19,11 @@
 
 make_desired_state_distance = function(param.dir,atl.dir,dietSource,ref.state.file,data.dir,out.dir,run.prefix,setup.file){
   
+  setup.df = read.csv(setup.file)
+  
   #Read in reference 
   ref.state = readRDS(ref.state.file) |> 
+    dplyr::arrange(Variable) |> 
     dplyr::mutate(desired.min.scaled = ifelse(!is.finite(desired.min.scaled),-Inf,desired.min.scaled),
                   desired.max.scaled = ifelse(!is.finite(desired.max.scaled),Inf,desired.max.scaled))
   
@@ -55,23 +58,31 @@ make_desired_state_distance = function(param.dir,atl.dir,dietSource,ref.state.fi
   #Loop through runs and calculate distance from ref run after scaling data to be on same interval
   for(i in 1:length(run.names)){
     
+    
   #read in eco indicators for this run, using make_eco_indicators on each run
     this.run.ind =  readRDS(paste0(data.dir,run.names[i],'/eco_indicators_ts.rds')) |> 
       dplyr::mutate(run.name = run.names[i],
-                    run = run.id[i]) |> 
-      dplyr::left_join(setup.file, by = 'run') |> 
-      dplyr::select(run.name,run, everything())
+                    run.id = run.id[i]) |> 
+      dplyr::left_join(setup.df, by = 'run.id') |> 
+      dplyr::select(run.name,run.id, everything())
     
     #scales data by mean of reference and replaces non-finite values with 0
     this.run.ref = this.run.ind |> 
       dplyr::filter(year %in% timeRange) |> 
-      tidyr::gather('Variable','state.value',-year, -run,-run.name,-catch.force, -catch.threshold, -catch.scalar) |> 
+      tidyr::gather('Variable','state.value',-year,-dominant_group, -run.id,-run.name,-eof_threshold,-dominance_factor, -catch.scalar) |> 
       dplyr::left_join(ref.state) |> 
       dplyr::mutate(state.value.scaled = state.value / mean.value,
-                    state.value.scaled = ifelse(!is.finite(state.value.scaled),0,state.value.scaled))
+                    state.value.scaled = ifelse(!is.finite(state.value.scaled),0,state.value.scaled)) |> 
+      
     run.ind.ref.ls[[i]] = this.run.ref
     
+    ref.state.match = ref.state |> 
+      dplyr::filter(Variable %in% unique(this.run.ref$Variable))
+    
     #calcuate distance from ref
+    
+    #remove indicators in ref state not present in run state
+    which.ind.missing = which(!(ind.names %in% unique(this.run.ref$Variable)))
     
     dist.ref <- tapply(
       this.run.ref$state.value.scaled,
@@ -79,8 +90,8 @@ make_desired_state_distance = function(param.dir,atl.dir,dietSource,ref.state.fi
       # This is the new wrapper function
       function(x) {
         make_state_distance_rect(
-          desired.upper = desired.upper.ref,
-          desired.lower = desired.lower.ref,
+          desired.upper = desired.upper.ref[-which.ind.missing],
+          desired.lower = desired.lower.ref[-which.ind.missing],
           observed.state = x
         )$distance # We immediately extract the $distance element here
       }
@@ -89,13 +100,13 @@ make_desired_state_distance = function(param.dir,atl.dir,dietSource,ref.state.fi
     this.run.ind.timeRange = this.run.ind |> dplyr::filter(year %in% timeRange)
     
     this.run.distance = data.frame(run.name = run.names[i],
-                                   run = run.id[i], 
+                                   run.id = run.id[i], 
                                    year = this.run.ind.timeRange$year,
                                    catch.tot =  this.run.ind.timeRange$catch.tot,
                                    rel.ref.catch = this.run.ind.timeRange$catch.tot/ref.state$mean.value[which(ref.state$Variable == 'catch.tot')],
                                    rel.threshold = this.run.ind.timeRange$catch.tot/ref.threshold.mean, 
                                    distance.ref = dist.ref, stringsAsFactors = FALSE) |> 
-      dplyr::left_join(setup.file)
+      dplyr::left_join(setup.df)
     
     run.distance.ls[[i]] = this.run.distance
     
@@ -107,8 +118,8 @@ make_desired_state_distance = function(param.dir,atl.dir,dietSource,ref.state.fi
       # This is the new wrapper function
       function(x) {
         make_state_distance_rect(
-          desired.upper = desired.upper.ref,
-          desired.lower = desired.lower.ref,
+          desired.upper = desired.upper.ref[-which.ind.missing],
+          desired.lower = desired.lower.ref[-which.ind.missing],
           observed.state = x
         )$closest_point # We immediately extract the $distance element here
       }
@@ -117,7 +128,7 @@ make_desired_state_distance = function(param.dir,atl.dir,dietSource,ref.state.fi
     closest.val.df <- lapply(names(closest.ref), function(current_item_name) {
       data.frame(
         year = current_item_name,
-        variable = ind.names,
+        variable = ind.names[-which.ind.missing],
         closest.ref = closest.ref[[current_item_name]]
       )
     }) |> 

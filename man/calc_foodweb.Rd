@@ -14,6 +14,7 @@ calc_foodweb(
   show.plot = F,
   figure.dir = NA,
   out.dir = NA,
+  bySpecies = FALSE,
   ...
 )
 }
@@ -30,10 +31,12 @@ calc_foodweb(
 
 \item{out.dir}{character string. Path to output directory for plots}
 
+\item{bySpecies}{logical. If TRUE, outputs a dataframe with metrics calculated for each species/node. Defaults to FALSE.}
+
 \item{plot}{logical. whether it should return plots as well as data}
 }
 \value{
-list of metric timeseries, metric status, food web, and ecosystem status
+list of metric timeseries, metric status, food web, and ecosystem status. If bySpecies is TRUE, returns a single dataframe of metrics.
 }
 \description{
 Food web indices
