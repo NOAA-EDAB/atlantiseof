@@ -25,11 +25,16 @@ est_link_threshold = function(atl.dir, param.dir, dietSource = NA, year, TE, alp
   bgm.file = file.path(param.dir, "neus_tmerc_RM2.bgm")
   ppdata <- atlantiseof::get_pp(bgm = bgm.file,pathToForcing = paste0(param.dir,'tsfiles/Annual_Files/'))
   
-  pp.neus <- ppdata$dailyspeciesbox %>%
-    dplyr::left_join(.,NEFSCspatial::Neus_atlantis %>% sf::st_as_sf(),by = c("box"="BOX_ID")) %>%
-    dplyr::group_by(year,variable) %>%
-    dplyr::summarise(N = sum(value),.groups="drop") %>%
-    dplyr::mutate(C = 5.7*N) %>%
+  neus.shp = NEFSCspatial::Neus_atlantis |> sf::st_as_sf() |> 
+    dplyr::arrange(BOX_ID)
+  active.box = neus.shp$BOX_ID[which(neus.shp$boundary== 0)]
+  
+  pp.neus <- ppdata$dailyspeciesbox |>
+    dplyr::left_join(neus.shp,by = c("box"="BOX_ID")) |>
+    dplyr::filter(boundary == 0) |> #remove boundary boxes
+    dplyr::group_by(year,variable) |>
+    dplyr::summarise(N = sum(value),.groups="drop") |>
+    dplyr::mutate(C = 5.7*N) |> #20 wet:dry from atlantis
     dplyr::filter(variable == "Diatom_N",
                   year >=1998)
   
@@ -55,21 +60,35 @@ est_link_threshold = function(atl.dir, param.dir, dietSource = NA, year, TE, alp
     }
     max.tl= ceiling(max(tl.df$trophicLevel))
     
-    tl.df = tl.df %>%
+    tl.df = tl.df |>
       dplyr::filter(Name %in% fished.spp)
     
     TL = mean(tl.df$trophicLevel,na.rm=T)
   }
   
-  param.combs = expand.grid(TE = TE, alpha = alpha,year = year,TL = TL,stringsAsFactors = FALSE)%>%
-    dplyr::mutate(threshold = NA)
+  param.combs = expand.grid(TE = TE, alpha = alpha,year = year,TL = TL,stringsAsFactors = FALSE)|>
+    dplyr::mutate(pp.mt.c = NA,
+                  threshold = NA)
   
   for(i in 1:nrow(param.combs)){
     
     pp = pp.neus$C[which(year == param.combs$year[i])]
     
     param.combs$threshold[i] = param.combs$alpha[i] * pp * param.combs$TE[i] ^(TL-1)
+    param.combs$pp.mt.c[i] = pp
   }
+  
+  #Get box area
+  box.stats = rbgm::bgmfile(bgm.file)$boxes |> 
+    dplyr::filter(.bx0 %in% active.box)
+  
+  #sum total area and convert from m^2 to km^2
+  totalArea = sum(box.stats$area) * 1E-6
+  
+  param.combs = param.combs |> 
+    dplyr::mutate(ryther = threshold / totalArea,
+                  fogarty = threshold/ pp.mt.c)
+    
   
   return(param.combs)
 

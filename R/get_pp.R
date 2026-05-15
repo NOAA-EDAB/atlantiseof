@@ -24,18 +24,21 @@ get_pp <- function(bgm, pathToForcing) {
   # pp only occurs in top layer
 
   neusbgm <- rbgm::bgmfile(bgm)
-  volume <- neusbgm$boxes %>%
-    dplyr::filter(.bx0 %in% c(1:22)) %>%
-    dplyr::select(.bx0,area) %>%
+  volume <- neusbgm$boxes |>
+    dplyr::filter(.bx0 %in% c(1:22)) |>
+    dplyr::select(.bx0,area) |>
     dplyr::mutate(m3 = area*50)
 
   totalArea <- sum(volume$area)/1e6 # m2 - > km2
 
+  neus.shp = NEFSCspatial::Neus_atlantis |> sf::st_as_sf() |> 
+    dplyr::arrange(BOX_ID)
+  active.box = which(neus.shp$boundary == 0)
   # find areas of epus based on atlantis boxes
-  epuarea <- dplyr::left_join(neusbgm$boxes,NEFSCspatial::Neus_atlantis %>% sf::st_as_sf(),
-                   by = c(".bx0"="BOX_ID")) %>%
-    dplyr::filter(.bx0 %in% c(1:22)) %>%
-    dplyr::group_by(epu) %>%
+  epuarea <- dplyr::left_join(neusbgm$boxes,neus.shp,
+                   by = c(".bx0"="BOX_ID")) |>
+    dplyr::filter(boundary == 0) |>
+    dplyr::group_by(epu) |>
     dplyr::summarise(area = sum(area)/1e6)
 
   PPdata <- NULL
@@ -67,7 +70,7 @@ get_pp <- function(bgm, pathToForcing) {
       # total mg N m-3 per year over footprint in top layer
       # surface layer 50 m deep
 
-      boxns <- 2:23
+      boxns <- active.box
       dailyboxN <- apply(var[,c(boxns),],c(2,3),sum,na.rm=T)
 
       # PP over NEUS
@@ -81,12 +84,12 @@ get_pp <- function(bgm, pathToForcing) {
       colnames(dailytotboxN) <- 1:ndays # day
       dailytotboxN <- tibble::rownames_to_column(dailytotboxN)
       names(dailytotboxN)[1] <- "box"
-      df <- tidyr::pivot_longer(dailytotboxN,cols=-box,names_to = "day",values_to = "value") %>%
+      df <- tidyr::pivot_longer(dailytotboxN,cols=-box,names_to = "day",values_to = "value") |>
         dplyr::mutate(year = iyr,
                       variable = avariable,
                       day = as.integer(day),
-                      box = as.integer(box)) %>%
-        dplyr::mutate(t = lubridate::date_decimal(year+day/length(dailyN))) %>%
+                      box = as.integer(box)) |>
+        dplyr::mutate(t = lubridate::date_decimal(year+day/length(dailyN))) |>
         dplyr::relocate(year,day,box,variable,value)
 
       PPvar <- rbind(PPvar,df)
@@ -99,21 +102,21 @@ get_pp <- function(bgm, pathToForcing) {
   dailyspeciesbox <- PPdata
 
   # sum over box
-  dailyspecies <- dailyspeciesbox %>%
-    dplyr::group_by(year,day,variable,t) %>%
+  dailyspecies <- dailyspeciesbox |>
+    dplyr::group_by(year,day,variable,t) |>
     dplyr::summarise(value = sum(value),.groups="drop")
 
   # sum over species and box
-  daily <- dailyspeciesbox %>%
-    dplyr::group_by(year,day,t) %>%
+  daily <- dailyspeciesbox |>
+    dplyr::group_by(year,day,t) |>
     dplyr::summarise(value = sum(value),.groups="drop")
 
   # mean over day (daily average)
-  annual <- dailyspeciesbox %>%
-    dplyr::group_by(year,day,t) %>%
-    dplyr::summarise(value = sum(value),.groups="drop") %>%
-    dplyr::group_by(year) %>%
-    dplyr::summarise(value = mean(value),.groups="drop") %>%
+  annual <- dailyspeciesbox |>
+    dplyr::group_by(year,day,t) |>
+    dplyr::summarise(value = sum(value),.groups="drop") |>
+    dplyr::group_by(year) |>
+    dplyr::summarise(value = mean(value),.groups="drop") |>
     dplyr::mutate(t = lubridate::date_decimal(year+.5))
 
   pp <- list()
