@@ -69,8 +69,9 @@ ref.thresh <- atlantiseof::est_link_threshold(
   year       = 2000:2010
 )
 saveRDS(ref.thresh, paste0(out_dir, 'eof_thresholds.rds'))
+ref.thresh =readRDS(paste0(out_dir, 'eof_thresholds.rds'))
 
-range(ref.thresh$threshold, na.rm = TRUE)
+range(ref.thresh$threshold, na.rm = TRUE)*9
 
 # Make Reference and Desired States
 atlantiseof::make_reference_state(
@@ -94,7 +95,8 @@ atlantiseof::prune_covariates(data_file = paste0(out_dir, "atlantis_EOF_scenario
                               cor_threshold = 0.7)
                                 
 
-
+atlantiseof::calc_scenario_distances(pruned_data_file =paste0(out_dir,'atlantis_EOF_scenario_data_pruned.rds'),
+                                     out_dir = out_dir)
 # 
 # atlantiseof::make_desired_state_distance(
 #   param.dir, atl.dir, dietSource, ref.state.file, data.dir, out_dir, run.prefix, setup.file,debug =T
