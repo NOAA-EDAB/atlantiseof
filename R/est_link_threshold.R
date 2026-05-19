@@ -23,7 +23,15 @@ est_link_threshold = function(atl.dir, param.dir, dietSource = NA, year, TE, alp
   fished.spp = fgs$Name[which(fgs$isFished ==1)]
   
   bgm.file = file.path(param.dir, "neus_tmerc_RM2.bgm")
-  ppdata <- atlantiseof::get_pp(bgm = bgm.file,pathToForcing = paste0(param.dir,'tsfiles/Annual_Files/'))
+  
+  if(pp.type == 'biomass'){
+    ppdata <- atlantiseof::get_pp(bgm = bgm.file,pathToForcing = paste0(param.dir,'tsfiles/Annual_Files/'))  
+  }else if(pp.type == 'production'){
+    ppdata.raw = read.csv(here::here('data-raw','data','MERGED_ANNUAL_SUM-NES_EPU_STATISTICAL_AREAS_NOEST-PPD-VGPM2_CHLOR_A-CCI-STATS-V2024.CSV'))
+  }else{
+    warning('pp.type must be either "biomass" or "production"')
+  }
+  
   
   neus.shp = NEFSCspatial::Neus_atlantis |> sf::st_as_sf() |> 
     dplyr::arrange(BOX_ID)

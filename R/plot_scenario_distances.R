@@ -19,10 +19,10 @@
 #'
 #' @export
 
-dist_file = paste0(out_dir, "scenario_multvar_distance.rds")
-out_dir = 'Z:/atlantiseof/figures/'
-min.year = 35
-max.year = 55
+# dist_file = paste0(out_dir, "scenario_multvar_distance.rds")
+# out_dir = 'Z:/atlantiseof/figures/'
+# min.year = 35
+# max.year = 55
 
 plot_scenario_distances <- function(dist_file, out_dir, min.year = NULL, max.year = NULL) {
   
