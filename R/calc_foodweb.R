@@ -21,8 +21,8 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
   fgs = read.csv(fgs.file) |> 
     dplyr::select(Code, Name, LongName, GroupType)
   
-  biomass.file = list.files(path = paste0(atl.dir,'/Post_Processed/Data/'), pattern = 'biomass_age.rds', full.names = T)
-  biomass.invert.file = list.files(path = paste0(atl.dir,'/Post_Processed/Data/'), pattern = 'biomass_age_invert.rds', full.names = T)
+  biomass.file = list.files(path = atl.dir, pattern = 'biomass_age.rds', full.names = T, recursive = T)
+  biomass.invert.file = list.files(path = atl.dir, pattern = 'biomass_age_invert.rds', full.names = T, recursive = T)
   
   age.mat = atlantiseof::get_age_mat(bio.file = list.files(path =param.dir, pattern= 'at_biology.prm',full.names = T)) |> 
     dplyr::left_join(fgs) |> 
