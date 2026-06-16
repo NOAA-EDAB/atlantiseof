@@ -110,7 +110,9 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
     connectance <- igraph::ecount(g_consumed) / (igraph::vcount(g_consumed)^2)
     in_degrees <- igraph::degree(g_consumed, mode = "in")
     out_degrees <- igraph::degree(g_consumed, mode = "out")
+    edge_distances <- 1 / (igraph::E(g_prop)$prop.consumption + 1e-12)
     betweenness <- igraph::betweenness(g_prop)
+    betweenness_weighted <- igraph::betweenness(g_prop, weights = edge_distances)
     network_betweenness_centralization <- igraph::centr_betw(g_prop)$centralization
     modularity_undirected <- igraph::modularity(g_undirected, igraph::membership(g_membership_undirected))
     modularity_directed <- igraph::modularity(g_prop, igraph::membership(g_membership_directed))
@@ -218,6 +220,7 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
         in_degree = in_degrees[all_nodes],
         out_degree = out_degrees[all_nodes],
         betweenness = betweenness[all_nodes],
+        betweenness_weighted = betweenness_weighted[all_nodes],
         connectance = connectance,
         network_betweenness_centralization = network_betweenness_centralization,
         modularity_directed = modularity_directed,

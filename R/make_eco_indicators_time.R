@@ -154,6 +154,7 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     print(head(tl.df))
   }
   
+
   # Calculate Mean Trophic level of catch by year
   mean.tl <- tryCatch({
     spp.df |>
@@ -172,6 +173,37 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     message("DEBUG: Mean trophic level of catch and biomass calculated.")
     print(head(mean.tl))
   }
+  
+  # Calculate biomass of consumers
+  consumer.spp = tl.df |> 
+    dplyr::group_by(Code) |> 
+    dplyr::summarise(trophicLevel = mean(trophicLevel)) |> 
+    dplyr::filter(trophicLevel >= 2) |> 
+    dplyr::pull(Code)
+  
+  bio.consumer = spp.df |> 
+    dplyr::left_join(tl.df) |> 
+    dplyr::filter(Code %in% consumer.spp) |> 
+    dplyr::group_by(year) |> 
+    dplyr::summarise(bio.consumer = sum(biomass,na.rm=T))
+  
+  eco.df = eco.df |> 
+    dplyr::left_join(bio.consumer)
+  
+  # Get spatial Gini index
+  bio.spatial.spp = calc_spatial_biomass(atl.dir, param.dir, fgs.file, aggregate_total = F, keep_groups = consumer.spp) |> 
+    dplyr::group_by(time) |> 
+    dplyr::summarise(biomass.spatial.gini.mean = mean(biomass.spatial.gini,na.rm=T)) |> 
+    dplyr::rename(year = 'time')
+    
+  bio.spatial.tot = calc_spatial_biomass(atl.dir, param.dir, fgs.file, aggregate_total = T, keep_groups = consumer.spp) |> 
+    dplyr::rename(biomass.spatial.gini.tot = 'biomass.spatial.gini',
+                  year = 'time') |> 
+    dplyr::select(year, biomass.spatial.gini.tot)
+  
+  eco.df = eco.df |>
+    dplyr::left_join(bio.spatial.spp) |> 
+    dplyr::left_join(bio.spatial.tot)
   
   # Calculate cumulative biomass indices
   cum.bio <- tryCatch({
@@ -244,7 +276,7 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
       dplyr::filter(year %in% timeRange) |>
       dplyr::select(-time) |>
       dplyr::group_by(year) |>
-      dplyr::summarise(dplyr::across(dplyr::everything(), mean, .names = "{.col}", na.rm = T))
+      dplyr::summarise(dplyr::across(dplyr::where(is.numeric), \(x) mean(x,na.rm=T), .names = "{.col}"))
   }, error = function(e) {
     warning("Failed to calculate foodweb metrics. Returning NAs. Error: ", e$message)
     data.frame(year = timeRange,
@@ -291,3 +323,4 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
   # Return list of all indicators
   return(eco.df)
 }
+  

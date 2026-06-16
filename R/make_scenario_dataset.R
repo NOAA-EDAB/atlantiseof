@@ -40,11 +40,15 @@ make_scenario_dataset <- function(targeting_run_prefix,
   uniform_run_dirs <- list.files(uniform_run_root, pattern = uniform_run_prefix, full.names = TRUE)
   
   # 2. Read Setup Files ----
-  targeting_setup_df <- utils::read.csv(targeting_setup_file)
-  uniform_setup_df <- utils::read.csv(uniform_setup_file)
+  targeting_setup_df <- utils::read.csv(targeting_setup_file) |> 
+    dplyr::rename('run.id' = dplyr::starts_with('run'))
+  
+  uniform_setup_df <- utils::read.csv(uniform_setup_file) |> 
+    dplyr::rename('run.id' = dplyr::starts_with('run'))
   
   # 3. Helper Function to pull run data ----
   pull_run_data <- function(run_dir) {
+    # ts.file = list.files(run_dir, pattern = "eco_indicators_ts.rds", full.names = TRUE, recursive = T)
     ind_file <- file.path(run_dir, "eco_indicators_ts.rds")
     
     if (!file.exists(ind_file)) return(NULL)
@@ -84,7 +88,7 @@ make_scenario_dataset <- function(targeting_run_prefix,
       scenario_name = "uniform",
       scenario_original_name = uniform_run_prefix
     ) |>
-    dplyr::left_join(uniform_setup_df, by = c("run.id" = "run")) |>
+    dplyr::left_join(uniform_setup_df, by = "run.id") |>
     dplyr::rename(eof_threshold = catch.threshold) |>
     dplyr::select(-dplyr::any_of("catch.force")) |>
     dplyr::mutate(

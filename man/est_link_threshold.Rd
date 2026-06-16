@@ -4,7 +4,17 @@
 \alias{est_link_threshold}
 \title{Read in the Phyto_Forcing_xxx.nc files to get estimates of PP}
 \usage{
-est_link_threshold(atl.dir, param.dir, dietSource = NA, year, TE, alpha, TL)
+est_link_threshold(
+  atl.dir,
+  param.dir,
+  dietSource = NA,
+  year,
+  TE,
+  alpha,
+  TL,
+  pp.type,
+  ppd.files = NA
+)
 }
 \arguments{
 \item{atl.dir}{Character String. Path to output directory}
@@ -20,6 +30,10 @@ est_link_threshold(atl.dir, param.dir, dietSource = NA, year, TE, alpha, TL)
 \item{alpha}{Numeric Vector. regional scalar for threshold (generally 0.15 - 0.2)}
 
 \item{TL}{Numeric Vector. Trophic level to use for estimating thresholds, generally 2.5 - 3.5, if NA will use the mean trophic level of fished species}
+
+\item{pp.type}{Character String. Whether to use "biomass" or "production" from the nc files. If "production", will use the merged annual PPD estimates from VGPM2 with chlorophyll a data from A-CCI. Note that these are not the same as the production estimates from the nc files, which are based on the Atlantis model state and may be more variable.}
+
+\item{ppd.files}{Character String. Path to directory containing the merged annual PPD estimates from VGPM2 with chlorophyll a data from A-CCI. Only used if pp.type = "production"}
 }
 \value{
 dataframe

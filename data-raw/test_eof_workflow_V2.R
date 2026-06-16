@@ -5,11 +5,12 @@
 # Base root paths (Update these when changing machines/drives)
 github_root   <- "Z:/atlantiseof/currentVersion/"
 atl_root      <- "C:/Users/joseph.caracappa/Documents/Data/base_run_eof/"
-run_data_root <- "Z:/dropoff/Joseph.Caracappa/eof_targeting_1/analysis/"
-out_dir <- "Z:/atlantiseof/data/"
+run_data_root <- "E:/data/eof_targeting_3/" #"Z:/dropoff/Joseph.Caracappa/eof_targeting_1/analysis/"
+out_dir <- "E:/data/eof_targeting_3/analysis/"
+results_dir = 'Z:/atlantiseof/data/'
 
 # Run specific parameters
-run.prefix <- "eof_targeting_1"
+run.prefix <- "eof_targeting_3"
 dietSource <- "detdiet"
 timeRange  <- 30:52
 out.name   <- "ref_"
@@ -28,7 +29,8 @@ data.dir       <- run_data_root
 
 # Input files
 fgs.file       <- file.path(param.dir, "neus_groups.csv")
-setup.file     <- paste0("Z:/atlantiseof/", run.prefix, "_setup.csv")
+setup.file     <- paste0(run_data_root,run.prefix,"_setup.csv")
+ppd.dir       <- file.path('E:/Satellite_Phyto/Data')
 
 # Files routed through the `here` package (relative to project root)
 group.index    <- here::here("data-raw", "neus_species_index.csv")
@@ -47,6 +49,7 @@ figure.dir        <- here::here("figures")
 plot.distance.dir <- out_dir # Routed here in original script
 plot.pca.dir      <- here::here("figures", "eof_thresholds_3", "")
 
+
 # ============================================================================ #
 # 3. DATA LOADING
 # ============================================================================ #
@@ -59,45 +62,89 @@ survdat.data    <- readRDS(survdat.file)
 # ============================================================================ #
 
 # Calculate Reference Thresholds
-ref.thresh <- atlantiseof::est_link_threshold(
+ref.thresh.bio <- atlantiseof::est_link_threshold(
   param.dir  = param.dir,
   atl.dir    = atl.dir,
   dietSource = dietSource,
   TL         = NA,
   TE         = c(0.1, 0.15),
   alpha      = c(0.15, 0.2),
-  year       = 2000:2010
+  year       = 2000:2010,
+  pp.type = 'biomass',
+  ppd.files = list.files(ppd.dir,pattern = 'D8-*', full.names =T)
 )
-saveRDS(ref.thresh, paste0(out_dir, 'eof_thresholds.rds'))
-ref.thresh =readRDS(paste0(out_dir, 'eof_thresholds.rds'))
+saveRDS(ref.thresh.bio, paste0(out_dir, 'eof_thresholds_biomass.rds'))
 
-range(ref.thresh$threshold, na.rm = TRUE)*9
+ref.thresh.ppd <- atlantiseof::est_link_threshold(
+  param.dir  = param.dir,
+  atl.dir    = atl.dir,
+  dietSource = dietSource,
+  TL         = NA,
+  TE         = c(0.1, 0.15),
+  alpha      = c(0.15, 0.2),
+  year       = 2000:2010,
+  pp.type = 'production',
+  ppd.files = list.files(ppd.dir,pattern = 'D8-*', full.names =T)
+)
+saveRDS(ref.thresh.ppd, paste0(out_dir, 'eof_thresholds_production.rds'))
+
+ref.thresh.bio =readRDS(paste0(out_dir, 'eof_thresholds_biomass.rds'))
+ref.thresh.ppd =readRDS(paste0(out_dir, 'eof_thresholds_production.rds'))
+
+range(ref.thresh.bio$threshold, na.rm = TRUE)*9
+range(ref.thresh.ppd$threshold, na.rm=T)*9
 
 # Make Reference and Desired States
 atlantiseof::make_reference_state(
   param.dir, atl.dir, group.index, fgs.file, dietSource,timeRange =  20:60, out.name, desired.p, survdat.data = survdat.data
 )
 
-targeting_run_prefix = 'eof_targeting_1'
+targeting_run_prefix = 'eof_targeting_3'
 uniform_run_prefix = 'catch_thresholds_eof_3'
 atlantiseof::make_scenario_dataset(targeting_run_prefix = targeting_run_prefix,
                                    uniform_run_prefix = uniform_run_prefix,
-                                   targeting_run_root = paste0("Z:/dropoff/Joseph.Caracappa/",targeting_run_prefix,"/analysis/" ),
+                                   targeting_run_root = paste0("Z:/dropoff/Joseph.Caracappa/",targeting_run_prefix,"/" ),
                                    uniform_run_root = paste0("Z:/dropoff/Joseph.Caracappa/",uniform_run_prefix,"/analysis/" ),
                                    uniform_setup_file = 'Z:/atlantiseof/catch_thresholds_eof_3_setup.csv',
-                                   targeting_setup_file = 'Z:/atlantiseof/eof_targeting_1_setup.csv',
+                                   targeting_setup_file = paste0('Z:/dropoff/Joseph.Caracappa/',targeting_run_prefix,'/eof_targeting_3_setup.csv'),
                                    ref_state_year_file = here::here("data-raw", "ref_eco_state_year.rds"),
-                                   out_dir = "Z:/atlantiseof/data/" )
+                                   out_dir =results_dir )
 
-atlantiseof::prune_covariates(data_file = paste0(out_dir, "atlantis_EOF_scenario_data.rds"),
+atlantiseof::prune_covariates(data_file = paste0(results_dir, "atlantis_EOF_scenario_data.rds"),
                               def_file = here::here('data-raw','indicator_defs.csv'),
-                              out_file = paste0(out_dir,'atlantis_EOF_scenario_data_pruned.rds'),
+                              out_file = paste0(results_dir,'atlantis_EOF_scenario_data_pruned.rds'),
                               cor_threshold = 0.7)
                                 
 
-atlantiseof::calc_scenario_distances(pruned_data_file =paste0(out_dir,'atlantis_EOF_scenario_data_pruned.rds'),
-                                     out_dir = out_dir)
-# 
+atlantiseof::calc_scenario_distances(pruned_data_file =paste0(results_dir,'atlantis_EOF_scenario_data_pruned.rds'),
+                                     out_dir = results_dir)
+
+atlantiseof::plot_scenario_distances(dist_file = paste0(results_dir,'scenario_multvar_distance.rds'),
+                                     out_dir=results_dir,
+                                     min.year = 30,
+                                     max.year = 60)
+
+atlantiseof::analyze_scenario_pca(data_file = paste0(results_dir,'atlantis_EOF_scenario_data_pruned.rds'),
+                                  out_dir = results_dir,
+                                  start_year = 30,
+                                  stop_year = 60,
+                                  scenario_names = 'targeting',
+                                  annual = T,
+                                  bin_width = 5
+  
+)
+
+atlantiseof::analyze_scenario_pca(data_file = paste0(results_dir,'atlantis_EOF_scenario_data_pruned.rds'),
+                                  out_dir = results_dir,
+                                  start_year = 30,
+                                  stop_year = 60,
+                                  scenario_names = 'targeting',
+                                  annual = F
+                                  
+)
+
+
+
 # atlantiseof::make_desired_state_distance(
 #   param.dir, atl.dir, dietSource, ref.state.file, data.dir, out_dir, run.prefix, setup.file,debug =T
 # )

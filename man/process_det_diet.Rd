@@ -4,7 +4,7 @@
 \alias{process_det_diet}
 \title{Processes detailed diet output for use in atlantisom}
 \usage{
-process_det_diet(atl.dir, detDietfile, outputname, cloud = F)
+process_det_diet(atl.dir, detDietfile, outputname, cloud = FALSE)
 }
 \arguments{
 \item{atl.dir}{Character String. Path to output directory}
