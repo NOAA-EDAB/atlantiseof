@@ -5,10 +5,12 @@
 \title{Network Resilience
 Optimized function to calculate resilience from the dominant eigenvalue}
 \usage{
-calculate_resilience(adj_matrix)
+calculate_resilience(adj_matrix, conversion_efficiency = 0.1)
 }
 \arguments{
 \item{adj_matrix}{matrix. directed flow adjacency matrix of the food web with names}
+
+\item{conversion_efficiency}{numeric. The assumed ecological transfer efficiency (default 0.1)}
 }
 \value{
 numeric resilience value

@@ -8,7 +8,7 @@ Function to calculate trophic level with fixed primary producers (useful for age
 calculate_trophic_levels_corrected(adj_matrix, basal_species)
 }
 \arguments{
-\item{adj_matrix}{matrix. directed flow adjacency matrix of the food web with names}
+\item{adj_matrix}{matrix. directed flow adjacency matrix of the food web with names (Rows = Prey, Cols = Predators)}
 
 \item{basal_species}{vector. character vector of species that are basal (primary producers)}
 }

@@ -3,7 +3,7 @@
 \name{calculate_avg_jaccard}
 \alias{calculate_avg_jaccard}
 \title{Jaccard Similarity
-Function to calculate the average Jaccard similarity}
+Function to calculate the average unweighted Jaccard similarity}
 \usage{
 calculate_avg_jaccard(g)
 }
@@ -15,5 +15,5 @@ numeric average jaccard similarity value
 }
 \description{
 Jaccard Similarity
-Function to calculate the average Jaccard similarity
+Function to calculate the average unweighted Jaccard similarity
 }

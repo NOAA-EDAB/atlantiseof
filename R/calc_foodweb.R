@@ -103,21 +103,58 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
     all_nodes <- igraph::V(g_consumed)$name
     flow_matrix_staged <- igraph::as_adjacency_matrix(g_consumed, attr = "consumption", sparse = FALSE)
     
-    # --- Calculate Standard Food Web Metrics ---
+    # --- Calculate Standard Food Web Metrics (UNWEIGHTED/BINARY) ---
     g_membership_undirected = igraph::cluster_louvain(g_undirected, weights = igraph::E(g_undirected)$prop.consumption)
     g_membership_directed = igraph::cluster_infomap(g_prop, e.weights = igraph::E(g_prop)$prop.consumption)
     
     connectance <- igraph::ecount(g_consumed) / (igraph::vcount(g_consumed)^2)
     in_degrees <- igraph::degree(g_consumed, mode = "in")
     out_degrees <- igraph::degree(g_consumed, mode = "out")
-    edge_distances <- 1 / (igraph::E(g_prop)$prop.consumption + 1e-12)
     betweenness <- igraph::betweenness(g_prop)
-    betweenness_weighted <- igraph::betweenness(g_prop, weights = edge_distances)
     network_betweenness_centralization <- igraph::centr_betw(g_prop)$centralization
     modularity_undirected <- igraph::modularity(g_undirected, igraph::membership(g_membership_undirected))
     modularity_directed <- igraph::modularity(g_prop, igraph::membership(g_membership_directed))
     redundancy_proxy <- 1 / (sd(in_degrees) + 1e-6)
+    avg_jaccard_similarity <- atlantiseof::calculate_avg_jaccard(g_consumed)
     
+    # --- Calculate Effective Replacements (WEIGHTED) ---
+    # 1. Effective In-Degree (Shannon Entropy of Diet -> exp(H) = "Effective number of prey")
+    eff_in_degree_df <- df_subset |>
+      dplyr::group_by(predator_node) |>
+      dplyr::summarise(
+        h = -sum(prop.consumption * log(prop.consumption + 1e-16), na.rm = TRUE),
+        eff_in = exp(h),
+        .groups = "drop"
+      )
+    eff_in_degrees <- stats::setNames(rep(0, length(all_nodes)), all_nodes)
+    eff_in_degrees[eff_in_degree_df$predator_node] <- eff_in_degree_df$eff_in
+    
+    # 2. Effective Out-Degree (Shannon Entropy of Outflow -> exp(H) = "Effective number of predators")
+    out_flow_df <- df_subset |>
+      dplyr::group_by(prey_node) |>
+      dplyr::mutate(prop.outflow = consumption / sum(consumption, na.rm = TRUE)) |>
+      dplyr::summarise(
+        h = -sum(prop.outflow * log(prop.outflow + 1e-16), na.rm = TRUE),
+        eff_out = exp(h),
+        .groups = "drop"
+      )
+    eff_out_degrees <- stats::setNames(rep(0, length(all_nodes)), all_nodes)
+    eff_out_degrees[out_flow_df$prey_node] <- out_flow_df$eff_out
+    
+    # 3. Weighted Connectance (Total effective links / possible links)
+    connectance_weighted <- sum(eff_in_degrees) / (length(all_nodes)^2)
+    
+    # 4. Weighted Redundancy
+    redundancy_proxy_weighted <- 1 / (sd(eff_in_degrees) + 1e-6)
+    
+    # 5. Weighted Betweenness
+    edge_distances <- 1 / (igraph::E(g_prop)$prop.consumption + 1e-12)
+    betweenness_weighted <- igraph::betweenness(g_prop, weights = edge_distances)
+    
+    # 6. Weighted Jaccard Similarity (Ružička Similarity)
+    avg_jaccard_similarity_weighted <- atlantiseof::calculate_avg_jaccard_weighted(g_prop)
+    
+    # --- Other Base Metrics ---
     asc_results <- NetIndices::AscInd(flow_matrix_staged) |> as.data.frame()
     ascendancy_val <- asc_results$Ascendency[1]
     capacity_val <- asc_results$Capacity[1]
@@ -128,7 +165,6 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
     trophic_levels <- atlantiseof::calculate_trophic_levels_corrected(flow_matrix_staged, basal_species = basal_species_for_current_time)
     coherence_val <- atlantiseof::calculate_coherence(flow_matrix_staged, trophic_levels)
     
-    avg_jaccard_similarity <- atlantiseof::calculate_avg_jaccard(g_consumed)
     resilience_eigenvalue <- tryCatch(atlantiseof::calculate_resilience(flow_matrix_staged), error = function(e) NA)
     
     # --- Keystone and Impact calculations ---
@@ -218,15 +254,20 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
         time = t,
         node = all_nodes,
         in_degree = in_degrees[all_nodes],
+        eff_in_degree = eff_in_degrees[all_nodes],
         out_degree = out_degrees[all_nodes],
+        eff_out_degree = eff_out_degrees[all_nodes],
         betweenness = betweenness[all_nodes],
         betweenness_weighted = betweenness_weighted[all_nodes],
         connectance = connectance,
+        connectance_weighted = connectance_weighted,
         network_betweenness_centralization = network_betweenness_centralization,
         modularity_directed = modularity_directed,
         modularity_undirected = modularity_undirected,
         redundancy_proxy = redundancy_proxy,
+        redundancy_proxy_weighted = redundancy_proxy_weighted,
         avg_jaccard_similarity = avg_jaccard_similarity,
+        avg_jaccard_similarity_weighted = avg_jaccard_similarity_weighted,
         ascendancy = ascendancy_val,
         capacity = capacity_val,
         coherence = coherence_val,
@@ -250,14 +291,20 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
       results_df <- data.frame(
         time = t,
         connectance = connectance,
+        connectance_weighted = connectance_weighted,
         mean_in_degree = mean(in_degrees),
+        mean_eff_in_degree = mean(eff_in_degrees),
         mean_out_degree = mean(out_degrees),
+        mean_eff_out_degree = mean(eff_out_degrees),
         mean_betweenness = mean(betweenness),
+        mean_betweenness_weighted = mean(betweenness_weighted),
         network_betweenness_centralization = network_betweenness_centralization,
         modularity_directed = modularity_directed,
         modularity_undirected = modularity_undirected,
         redundancy_proxy = redundancy_proxy,
+        redundancy_proxy_weighted = redundancy_proxy_weighted,
         avg_jaccard_similarity = avg_jaccard_similarity,
+        avg_jaccard_similarity_weighted = avg_jaccard_similarity_weighted,
         ascendancy = ascendancy_val,
         capacity = capacity_val,
         coherence = coherence_val,
@@ -336,6 +383,8 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
       p_value <- summary(model)$coefficients[2, 4]
       if (p_value < 0.05) { if (slope > 0) { return("Increasing") } else { return("Decreasing") } } else { return("Stable") }
     }
+    
+    # Intentionally preserving unweighted 'connectance' dependency so existing status logic doesn't break
     determine_ecosystem_status <- function(statuses) {
       if (any(c(statuses$ascendancy, statuses$connectance) == "Decreasing") || statuses$resilience_eigenvalue == "Increasing") { return("Disrupted & Collapsing") }
       if (statuses$connectance == "Decreasing" && statuses$overhead == "Decreasing" && statuses$ascendancy == "Stable") { return("Shrinking but Streamlined") }

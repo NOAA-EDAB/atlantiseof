@@ -22,8 +22,8 @@ calc_spatial_biomass(
 \item{aggregate_total}{Logical. If TRUE, sums biomass across all selected species
 per polygon before calculating a single aggregated Gini index. Defaults to FALSE.}
 
-\item{keep_groups}{Character vector. Optional list of species names (matching the
-\code{LongName}/\code{species} column) to include in the calculation. If NULL, keeps all.}
+\item{keep_groups}{Character vector. Optional list of species codes (matching the
+\code{Code} column in fgs) to include in the calculation. If NULL, keeps all.}
 }
 \value{
 A data frame containing the spatial Gini index per timestep (and per species if not aggregated)

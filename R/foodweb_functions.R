@@ -3,7 +3,7 @@
 #'Corrected Trophic Levels with assumed primary producers
 #'Function to calculate trophic level with fixed primary producers (useful for age-structured food web)
 #'
-#'@param adj_matrix matrix. directed flow adjacency matrix of the food web with names
+#'@param adj_matrix matrix. directed flow adjacency matrix of the food web with names (Rows = Prey, Cols = Predators)
 #'@param basal_species vector. character vector of species that are basal (primary producers)
 #'
 #'@returns vector of trophic levels by species in the adj_matrix
@@ -12,27 +12,38 @@
 #'
 
 calculate_trophic_levels_corrected <- function(adj_matrix, basal_species) {
+  
+  # 1. Transpose the matrix so Rows = Predators, Columns = Prey
+  flow_mat <- t(adj_matrix)
+  
+  # 2. Normalize raw consumption flows into a Diet Composition (Proportion) matrix 'Q'
+  row_totals <- rowSums(flow_mat, na.rm = TRUE)
+  # Prevent division by zero for species that don't eat (e.g., basal species)
+  Q <- sweep(flow_mat, 1, ifelse(row_totals > 0, row_totals, 1), "/")
+  
   # Initialize a vector for trophic levels with NAs
-  tl <- rep(NA, nrow(adj_matrix))
-  names(tl) <- rownames(adj_matrix)
+  tl <- rep(NA, nrow(Q))
+  names(tl) <- rownames(Q)
   
   # Manually set the trophic level of known basal species to 1
-  basal_species_in_matrix <- intersect(basal_species, rownames(adj_matrix))
+  basal_species_in_matrix <- intersect(basal_species, rownames(Q))
   tl[basal_species_in_matrix] <- 1
   
   # Identify non-basal species
-  non_basal_species <- setdiff(rownames(adj_matrix), basal_species_in_matrix)
+  non_basal_species <- setdiff(rownames(Q), basal_species_in_matrix)
   
   if (length(non_basal_species) > 0) {
-    # Create a sub-matrix of only non-basal species
-    sub_adj_matrix <- adj_matrix[non_basal_species, non_basal_species, drop = FALSE]
+    # Create a sub-matrix of proportions between only non-basal species
+    sub_Q <- Q[non_basal_species, non_basal_species, drop = FALSE]
     
-    # Create a vector 'e' that represents the contribution from basal species
-    e <- adj_matrix[non_basal_species, basal_species_in_matrix, drop = FALSE] %*% tl[basal_species_in_matrix]
+    # Create a vector 'e' that represents the proportional contribution from basal species
+    # e = Q[non_basal, basal] * TL[basal]
+    e <- Q[non_basal_species, basal_species_in_matrix, drop = FALSE] %*% tl[basal_species_in_matrix]
     
     # Calculate the trophic levels for non-basal species using matrix inversion
+    # TL = 1 + Q * TL -> (I - Q) * TL = 1 + e
     I <- diag(length(non_basal_species))
-    tl_non_basal <- solve(I - sub_adj_matrix, rep(1, length(non_basal_species)) + e)
+    tl_non_basal <- solve(I - sub_Q, rep(1, length(non_basal_species)) + e)
     
     # Fill in the final trophic levels vector
     tl[non_basal_species] <- tl_non_basal
@@ -72,7 +83,7 @@ calculate_coherence <- function(adj_matrix, trophic_levels) {
 }
 
 #'Jaccard Similarity
-#'Function to calculate the average Jaccard similarity
+#'Function to calculate the average unweighted Jaccard similarity
 #'@param g igraph object. directed food web graph
 #'
 #'@returns numeric average jaccard similarity value
@@ -114,35 +125,89 @@ calculate_avg_jaccard <- function(g) {
   return(mean(jaccard_scores, na.rm = TRUE))
 }
 
+#'Weighted Jaccard Similarity (Ružička Similarity)
+#'Function to calculate the average weighted Jaccard similarity
+#'@param g igraph object. directed food web graph
+#'
+#'@returns numeric average weighted jaccard similarity value
+#'
+#'@export 
+#'
+calculate_avg_jaccard_weighted <- function(g) {
+  predators <- igraph::V(g)[igraph::degree(g, mode = "out") > 0] # Predators are nodes with outgoing links to prey
+  num_predators <- length(predators)
+  
+  if (num_predators < 2) {
+    return(NA) # Cannot calculate if there are fewer than 2 predators
+  }
+  
+  # Extract weighted adjacency matrix using diet proportions (prop.consumption)
+  # Rows = Prey, Cols = Predators
+  adj_matrix <- igraph::as_adjacency_matrix(g, attr = "prop.consumption", sparse = FALSE)
+  
+  # Subset for predators
+  pred_names <- names(predators)
+  prey_pred_matrix <- adj_matrix[, pred_names, drop = FALSE]
+  
+  jaccard_scores <- numeric()
+  
+  # Calculate Ružička Similarity (Weighted Jaccard) for all predator pairs
+  for (i in 1:(num_predators - 1)) {
+    for (j in (i + 1):num_predators) {
+      diet_A <- prey_pred_matrix[, i]
+      diet_B <- prey_pred_matrix[, j]
+      
+      # Sum of minimum overlaps / Sum of maximum overlaps
+      intersection <- sum(pmin(diet_A, diet_B))
+      union <- sum(pmax(diet_A, diet_B))
+      
+      if (union > 0) {
+        jaccard_scores <- c(jaccard_scores, intersection / union)
+      }
+    }
+  }
+  
+  return(mean(jaccard_scores, na.rm = TRUE))
+}
+
 #'Network Resilience
 #' Optimized function to calculate resilience from the dominant eigenvalue
 #'@param adj_matrix matrix. directed flow adjacency matrix of the food web with names
+#'@param conversion_efficiency numeric. The assumed ecological transfer efficiency (default 0.1)
 #'
 #'@returns numeric resilience value
 #'
 #'@export 
 #'
-calculate_resilience <- function(adj_matrix) {
+calculate_resilience <- function(adj_matrix, conversion_efficiency = 0.1) {
   num_species <- nrow(adj_matrix)
   
   if (num_species < 2) {
     return(NA)
   }
   
-  # Get interaction strengths from the flow matrix (predator on prey effect)
-  # Normalize by the max flow to keep values within a reasonable range
-  interaction_strength <- adj_matrix / (max(adj_matrix, na.rm = TRUE) + 1e-9)
+  # FIX: Avoid "Plankton Swamp" by normalizing flows relative to the nodes themselves, 
+  # rather than the massive global maximum.
+  
+  # 1. Effect of Predator on Prey (Rows = Prey)
+  # Proportion of a prey's total consumed biomass that goes to a specific predator
+  row_totals <- rowSums(adj_matrix, na.rm = TRUE)
+  pred_on_prey <- sweep(adj_matrix, 1, ifelse(row_totals > 0, row_totals, 1), "/")
+  
+  # 2. Effect of Prey on Predator (Cols = Predators)
+  # Proportion of a predator's total diet that comes from a specific prey
+  col_totals <- colSums(adj_matrix, na.rm = TRUE)
+  prey_on_pred <- sweep(adj_matrix, 2, ifelse(col_totals > 0, col_totals, 1), "/")
   
   # Create a community matrix
   community_matrix <- matrix(0, nrow = num_species, ncol = num_species, dimnames = dimnames(adj_matrix))
   
   # Off-diagonal elements:
-  # effect of i on j = strength from j to i (as i is prey for j)
-  # effect of j on i = -strength from i to j (as j is predator on i)
+  # Negative effect of predator on prey (based on prey's outflow distribution)
+  community_matrix[pred_on_prey > 0] <- -pred_on_prey[pred_on_prey > 0]
   
-  # Populate the matrix in a vectorized way
-  community_matrix[interaction_strength > 0] <- -interaction_strength[interaction_strength > 0]
-  community_matrix[t(interaction_strength) > 0] <- t(interaction_strength)[t(interaction_strength) > 0]
+  # Positive effect of prey on predator (based on predator's diet distribution * efficiency)
+  community_matrix[t(prey_on_pred) > 0] <- conversion_efficiency * t(prey_on_pred)[t(prey_on_pred) > 0]
   
   # Diagonal elements: assume constant self-regulation
   diag(community_matrix) <- -1
