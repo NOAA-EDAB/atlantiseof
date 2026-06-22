@@ -51,11 +51,33 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
       dplyr::filter(year %in% timeRange) |>
       dplyr::group_by(Code, year)|>
       dplyr::summarise(catch = mean(Catch, na.rm = T))
+    
+    #Calculate Shannon Entropy of Catch (i.e. Catch Diversity)
+    catch_entropy_df <- catch.df |>
+      # Remove instances of exactly 0 catch to prevent log(0) returning -Inf
+      dplyr::filter(catch > 0) |> 
+      dplyr::group_by(year) |>
+      dplyr::mutate(
+        total_catch = sum(catch, na.rm = TRUE),
+        # Calculate the proportion of total catch for each species (p_i)
+        p_catch = catch / total_catch
+      ) |>
+      dplyr::summarise(
+        # Shannon Entropy: H' = -sum(p_i * ln(p_i))
+        catch.entropy = -sum(p_catch * log(p_catch), na.rm = TRUE),
+        .groups = "drop"
+      )
+    
   } else {
     warning("Catch file not found. Catch-based metrics will be 0 or NA.")
     catch.df = expand.grid(year = timeRange, Code = groups$Code) |>
       dplyr::mutate(catch = 0)
+    
+    catch_entropy_df = data.frame(year = timeRange,
+                                  catch.entropy = NA)
   }
+  
+
   
   if(debug) message("DEBUG: Biomass and Catch data loaded.")
   
@@ -108,7 +130,8 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
       prop.bio.pelagic = pelagic.bio / bio.tot,
       prop.bio.predator = predator.bio / bio.tot
     )|>
-    dplyr::select(-c(pelagic.bio, predator.bio))
+    dplyr::select(-c(pelagic.bio, predator.bio)) |> 
+    dplyr::left_join(catch_entropy_df)
   
   if(debug){
     message("DEBUG: Base ecological indicators (biomass, catch, overfished proportion) calculated.")
@@ -303,6 +326,26 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     print(head(foodweb.df))
   }
   
+  # Do size spectrum
+  size.spectrum <- tryCatch({
+    calc_size_spectrum(atl.dir = atl.dir,
+                       param.dir = param.dir,
+                       fgs.file = fgs.file,
+                       aggregate_spatial = TRUE,
+                       log10_bin_width = 0.5) |> 
+      dplyr::rename(year = 'time',
+                    size.spectrum.r2 = 'r2',
+                    size.spectrum.intercept = 'intercept'
+      ) |> 
+      dplyr::select(year, size.spectrum.slope, size.spectrum.r2, size.spectrum.intercept)
+  }, error = function(e) {
+    warning("Failed to calculate size spectrum metrics. Returning NAs. Error: ", e$message)
+    data.frame(year = timeRange,
+               size.spectrum.slope = NA,
+               size.spectrum.r2 = NA,
+               size.spectrum.intercept = NA) # Empty df with year for joining
+  })
+  
   # --- Final Assembly ---
   
   # Join all indicator dataframes together
@@ -311,7 +354,8 @@ make_eco_indicators_time = function(param.dir, atl.dir, group.index, fgs.file, d
     dplyr::left_join(cum.bio, by = "year") |>
     dplyr::left_join(fish.prop, by = c('year' = 'year.ref')) |>
     dplyr::left_join(diverge, by = "year") |>
-    dplyr::left_join(foodweb.df, by = "year")
+    dplyr::left_join(foodweb.df, by = "year") |> 
+    dplyr::left_join(size.spectrum, by = 'year')
   
   if(debug){
     message("DEBUG: All indicator dataframes have been joined.")
