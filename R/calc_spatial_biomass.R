@@ -26,12 +26,19 @@ calc_spatial_biomass = function(atl.dir, param.dir, fgs.file, aggregate_total = 
   
   # 2. Locate and Load Biomass Box Data
   bio.box.file = list.files(atl.dir, pattern = 'biomass_box.rds', recursive = TRUE, full.names = TRUE)
+  bio.box.invert.file = list.files(atl.dir, pattern = 'biomass_box_invert.rds', recursive = TRUE, full.names = TRUE)
   
   if(length(bio.box.file) == 0) {
     stop("Error: 'biomass_box.rds' not found in the specified atl.dir")
   }
+  if(length(bio.box.invert.file) == 0) {
+    stop("Error: 'biomass_box_invert.rds' not found in the specified atl.dir")
+  }
   
   bio.box = readRDS(bio.box.file[1])
+  bio.box.invert = readRDS(bio.box.invert.file[1])
+  
+  bio.box = dplyr::bind_rows(bio.box,bio.box.invert)
   
   # 3. Filter by keep_groups if provided (using fgs$Code)
   if (!is.null(keep_groups)) {
