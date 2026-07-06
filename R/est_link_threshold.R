@@ -25,6 +25,9 @@ est_link_threshold = function(atl.dir, param.dir, dietSource = NA, year, TE, alp
   fished.spp = fgs$Name[which(fgs$isFished ==1)]
   
   bgm.file = file.path(param.dir, "neus_tmerc_RM2.bgm")
+  neus.shp = NEFSCspatial::Neus_atlantis |> sf::st_as_sf() |> 
+    dplyr::arrange(BOX_ID)
+  active.box = neus.shp$BOX_ID[which(neus.shp$boundary== 0)]
   
   if(pp.type == 'biomass'){
     ppdata <- atlantiseof::get_pp(bgm = bgm.file,pathToForcing = paste0(param.dir,'tsfiles/Annual_Files/'))  
@@ -53,10 +56,7 @@ est_link_threshold = function(atl.dir, param.dir, dietSource = NA, year, TE, alp
     warning('pp.type must be either "biomass" or "production"')
   }
   
-  neus.shp = NEFSCspatial::Neus_atlantis |> sf::st_as_sf() |> 
-    dplyr::arrange(BOX_ID)
-  active.box = neus.shp$BOX_ID[which(neus.shp$boundary== 0)]
-  
+
   if(pp.type == 'biomass'){
     pp.neus = pp.neus |>
       dplyr::filter(variable == "Diatom_N",

@@ -208,6 +208,7 @@ prune_covariates <- function(data_file,
   scenario_data_pruned <- scenario_data |>
     dplyr::filter(Variable %in% variables_to_keep)
   
+ 
   saveRDS(scenario_data_pruned, out_file)
   message("Pruned dataset saved to: ", out_file)
   

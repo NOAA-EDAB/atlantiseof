@@ -79,6 +79,8 @@ plot_scenario_distances <- function(dist_file, out_dir, min.year = NULL, max.yea
   
   dominant_groups <- sort(unique(targeting_data$dominant_group))
   
+    
+  
   for (grp in dominant_groups) {
     grp_data <- targeting_data |> dplyr::filter(dominant_group == grp)
     

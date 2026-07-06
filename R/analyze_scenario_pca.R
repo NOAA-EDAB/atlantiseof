@@ -21,7 +21,7 @@
 #'
 #' @importFrom dplyr select filter group_by summarise mutate bind_rows all_of arrange pull
 #' @importFrom tidyr pivot_wider drop_na
-#' @importFrom stats prcomp cov mahalanobis pchisq
+#' @importFrom stats prcomp cov mahalanobis pchisq qchisq
 #' @importFrom ggplot2 ggplot aes geom_point geom_segment geom_text stat_ellipse labs theme_minimal theme scale_color_viridis_d ggsave geom_path geom_line arrow unit scale_size_continuous facet_grid facet_wrap geom_hline
 #' @importFrom grDevices pdf dev.off
 #'
@@ -79,13 +79,21 @@ analyze_scenario_pca <- function(data_file, out_dir, start_year = NULL, stop_yea
     dplyr::group_by(year, year_bin, run.id, scenario_name, dominant_group, dominance_factor, catch.scalar, Variable) |>
     dplyr::summarise(Value.scaled = mean(Value.scaled, na.rm = TRUE), .groups = "drop")
   
-  # If annual flag is FALSE, average all data for each run into a single point
+  # If annual flag is FALSE, average experimental data for each run into a single point, 
+  # but strictly keep reference data un-averaged so its natural interannual variance defines the ellipse
   if (!annual) {
-    message("Averaging indicators across all years for each run prior to PCA...")
-    wide_data_long <- wide_data_long |>
+    message("Averaging indicators across all years for experimental runs prior to PCA...")
+    
+    ref_long <- wide_data_long |> 
+      dplyr::filter(scenario_name == "reference")
+    
+    exp_long <- wide_data_long |>
+      dplyr::filter(scenario_name != "reference") |>
       dplyr::group_by(run.id, scenario_name, dominant_group, dominance_factor, catch.scalar, Variable) |>
       dplyr::summarise(Value.scaled = mean(Value.scaled, na.rm = TRUE), .groups = "drop") |>
       dplyr::mutate(year_bin = factor("All"), year = NA)
+    
+    wide_data_long <- dplyr::bind_rows(ref_long, exp_long)
   }
   
   # Pivot to wide format (Rows = Runs/Years, Columns = Indicators)
@@ -127,10 +135,48 @@ analyze_scenario_pca <- function(data_file, out_dir, start_year = NULL, stop_yea
     stop("No 'reference' scenario found in the dataset to perform analytical comparisons.")
   }
   
-  # Calculate mean reference point if multiple years exist
+  # Calculate mean reference point (centroid of natural variance)
   ref_centroid <- c(PC1 = mean(ref_data$PC1), PC2 = mean(ref_data$PC2))
   
-  # 3. Analytical Determination (Mahalanobis Distance) ----
+  # 2.5 Calculate Reference Ellipse Containment ----
+  ref_containment <- NULL
+  if (nrow(ref_data) > 2) {
+    message("Calculating reference ellipse containment for scenarios...")
+    
+    # Calculate the interannual covariance matrix of the reference scenario
+    ref_cov <- stats::cov(ref_data[, c("PC1", "PC2")])
+    
+    # Treat each scenario and run as a unique identifier by finding its centroid
+    run_centroids <- exp_data |>
+      dplyr::group_by(run.id, scenario_name, dominant_group, dominance_factor, catch.scalar) |>
+      dplyr::summarize(
+        PC1 = mean(PC1, na.rm = TRUE),
+        PC2 = mean(PC2, na.rm = TRUE),
+        .groups = "drop"
+      )
+    
+    # Calculate distance of each experimental scenario centroid to the reference centroid
+    ref_containment <- run_centroids |>
+      dplyr::mutate(
+        Mahalanobis_D2 = stats::mahalanobis(
+          as.matrix(cbind(PC1, PC2)), 
+          center = ref_centroid, 
+          cov = ref_cov
+        ),
+        # 95% bounds of a bivariate normal distribution correspond to chisq with 2 DF
+        Inside_Reference_Ellipse = Mahalanobis_D2 <= stats::qchisq(0.95, df = 2)
+      ) |>
+      # Output shows each unique scenario that is WITHIN the reference ellipse
+      dplyr::filter(Inside_Reference_Ellipse) |>
+      dplyr::select(run.id, scenario_name, dominant_group, dominance_factor, catch.scalar, 
+                    PC1, PC2, Mahalanobis_D2)
+    
+    contain_file <- file.path(out_dir, paste0("scenarios_within_reference_ellipse", file_suffix, ".csv"))
+    write.csv(ref_containment, contain_file, row.names = FALSE)
+    message("  Scenarios within reference ellipse saved to: ", contain_file)
+  }
+  
+  # 3. Analytical Determination (Mahalanobis Distance for Groups) ----
   message("Analytically determining if reference lies outside 95% confidence ellipses...")
   
   # Helper function to check ellipse containment
@@ -192,8 +238,28 @@ analyze_scenario_pca <- function(data_file, out_dir, start_year = NULL, stop_yea
   
   # Base Biplot Function
   create_biplot <- function(df, color_col, title, subtitle, show_ellipse = TRUE) {
-    p <- ggplot2::ggplot(df, ggplot2::aes(x = PC1, y = PC2)) +
-      ggplot2::geom_point(ggplot2::aes(color = as.factor(.data[[color_col]])), alpha = 0.5)
+    p <- ggplot2::ggplot(df, ggplot2::aes(x = PC1, y = PC2)) 
+    
+    # Plot the Reference Interannual Ellipse if annual == FALSE
+    if (!annual && nrow(ref_data) > 2) {
+      p <- p + ggplot2::stat_ellipse(
+        data = ref_data, 
+        ggplot2::aes(x = PC1, y = PC2),
+        color = "red", linetype = "dashed", type = "norm", level = 0.95, linewidth = 0.8,
+        inherit.aes = FALSE
+      )
+    } else if (annual && nrow(ref_data) > 1) {
+      # Plot individual Reference Interannual points if annual == TRUE
+      p <- p + ggplot2::geom_point(
+        data = ref_data,
+        ggplot2::aes(x = PC1, y = PC2),
+        color = "firebrick", alpha = 0.3, size = 1.5, shape = 16,
+        inherit.aes = FALSE
+      )
+    }
+    
+    # Plot the actual experimental scenario points
+    p <- p + ggplot2::geom_point(ggplot2::aes(color = as.factor(.data[[color_col]])), alpha = 0.5)
     
     if (show_ellipse) {
       # Safety check: stat_ellipse requires at least 3 points and a positive definite 
@@ -218,6 +284,15 @@ analyze_scenario_pca <- function(data_file, out_dir, start_year = NULL, stop_yea
       }
     }
     
+    caption_text <- ifelse(show_ellipse, 
+                           "Red triangle = Reference Centroid. Colored ellipses = 95% group bounds.",
+                           "Red triangle = Reference Centroid.")
+    if (!annual && nrow(ref_data) > 2) {
+      caption_text <- paste(caption_text, "\nRed dashed ellipse = 95% Reference interannual bounds.")
+    } else if (annual && nrow(ref_data) > 1) {
+      caption_text <- paste(caption_text, "\nFaint red points = Reference interannual spread.")
+    }
+    
     p <- p +
       # Add Loadings (Variables)
       ggplot2::geom_segment(data = loadings, ggplot2::aes(x = 0, y = 0, xend = PC1 * scale_fac, yend = PC2 * scale_fac), 
@@ -225,16 +300,14 @@ analyze_scenario_pca <- function(data_file, out_dir, start_year = NULL, stop_yea
       ggplot2::geom_text(data = loadings, ggplot2::aes(x = PC1 * scale_fac * 1.1, y = PC2 * scale_fac * 1.1, label = Variable), 
                          color = "black", size = 3) +
       
-      # Add Reference Point
+      # Add Reference Point (Centroid)
       ggplot2::geom_point(data = data.frame(PC1 = ref_centroid[1], PC2 = ref_centroid[2]), 
                           shape = 24, fill = "red", color = "black", size = 4, stroke = 1.5) +
       
       ggplot2::scale_color_viridis_d(name = color_col, option = "plasma") +
       ggplot2::theme_minimal() +
       ggplot2::labs(title = title, subtitle = subtitle, x = xlab_str, y = ylab_str,
-                    caption = ifelse(show_ellipse, 
-                                     "Red triangle indicates Reference. Ellipses indicate 95% confidence bounds.",
-                                     "Red triangle indicates Reference."))
+                    caption = caption_text)
     
     return(p)
   }
@@ -278,10 +351,35 @@ analyze_scenario_pca <- function(data_file, out_dir, start_year = NULL, stop_yea
     dplyr::arrange(dominant_group, dominance_factor, catch.scalar, year_bin)
   
   # Plot 4: State Trajectories (Path maps in PCA Space)
+  caption_p4 <- "Red triangle represents the unperturbed Reference state. Grouped by targeted guild."
+  if (!annual && nrow(ref_data) > 2) {
+    caption_p4 <- paste(caption_p4, "\nRed dashed ellipse = 95% Reference interannual bounds.")
+  } else if (annual && nrow(ref_data) > 1) {
+    caption_p4 <- paste(caption_p4, "\nFaint red points = Reference interannual spread.")
+  }
+  
   p4 <- ggplot2::ggplot(run_scores, ggplot2::aes(x = PC1, y = PC2)) +
     # Draw reference centroid
     ggplot2::geom_point(data = data.frame(PC1 = ref_centroid[1], PC2 = ref_centroid[2]), 
-                        shape = 24, fill = "red", color = "black", size = 5, stroke = 1.5) +
+                        shape = 24, fill = "red", color = "black", size = 5, stroke = 1.5)
+  
+  if (!annual && nrow(ref_data) > 2) {
+    p4 <- p4 + ggplot2::stat_ellipse(
+      data = ref_data, 
+      ggplot2::aes(x = PC1, y = PC2),
+      color = "red", linetype = "dashed", type = "norm", level = 0.95, linewidth = 0.8,
+      inherit.aes = FALSE
+    )
+  } else if (annual && nrow(ref_data) > 1) {
+    p4 <- p4 + ggplot2::geom_point(
+      data = ref_data,
+      ggplot2::aes(x = PC1, y = PC2),
+      color = "firebrick", alpha = 0.3, size = 1.5, shape = 16,
+      inherit.aes = FALSE
+    )
+  }
+  
+  p4 <- p4 +
     # Draw paths of change for each dominance factor
     ggplot2::geom_path(ggplot2::aes(group = as.factor(dominance_factor), color = as.factor(dominance_factor)), 
                        arrow = ggplot2::arrow(length = ggplot2::unit(0.15, "cm")), linewidth = 0.8, alpha = 0.7) +
@@ -295,7 +393,7 @@ analyze_scenario_pca <- function(data_file, out_dir, start_year = NULL, stop_yea
       title = "PCA State Trajectories: How the Ecosystem Departs from Reference",
       subtitle = "Path lines track increasing Catch Scalar (indicated by node size) for each Dominance Factor",
       x = xlab_str, y = ylab_str,
-      caption = "Red triangle represents the unperturbed Reference state. Grouped by targeted guild."
+      caption = caption_p4
     )
   
   # Plot 5: Distance Departure Response Surfaces
@@ -399,6 +497,7 @@ analyze_scenario_pca <- function(data_file, out_dir, start_year = NULL, stop_yea
     pca_data = pca_data,
     loadings = loadings,
     analytical_results = analytical_results,
+    reference_containment = ref_containment,
     plots = plot_list
   )))
 }

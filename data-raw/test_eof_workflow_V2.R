@@ -100,14 +100,15 @@ atlantiseof::make_reference_state(
 )
 
 targeting_run_prefix = 'eof_targeting_3'
-uniform_run_prefix = 'catch_thresholds_eof_3'
+uniform_run_prefix = 'catch_thresholds_eof_uniform_standard'
 atlantiseof::make_scenario_dataset(targeting_run_prefix = targeting_run_prefix,
                                    uniform_run_prefix = uniform_run_prefix,
-                                   targeting_run_root = paste0("Z:/dropoff/Joseph.Caracappa/",targeting_run_prefix,"/" ),
-                                   uniform_run_root = paste0("Z:/dropoff/Joseph.Caracappa/",uniform_run_prefix,"/analysis/" ),
-                                   uniform_setup_file = 'Z:/atlantiseof/catch_thresholds_eof_3_setup.csv',
-                                   targeting_setup_file = paste0('Z:/dropoff/Joseph.Caracappa/',targeting_run_prefix,'/eof_targeting_3_setup.csv'),
+                                   targeting_run_root = paste0('E:/data/',targeting_run_prefix,'/'),  #paste0("Z:/dropoff/Joseph.Caracappa/",targeting_run_prefix,"/" ),
+                                   uniform_run_root = paste0("Z:/dropoff/export/",uniform_run_prefix,"/" ),
+                                   uniform_setup_file = paste0('Z:/atlantiseof/',uniform_run_prefix,'_setup.csv'),
+                                   targeting_setup_file = paste0('Z:/dropoff/Joseph.Caracappa/',targeting_run_prefix,'/',targeting_run_prefix,'_setup.csv'),
                                    ref_state_year_file = here::here("data-raw", "ref_eco_state_year.rds"),
+                                   def_file = here::here('data-raw','indicator_defs.csv'),
                                    out_dir =results_dir )
 
 atlantiseof::prune_covariates(data_file = paste0(results_dir, "atlantis_EOF_scenario_data.rds"),
@@ -138,7 +139,18 @@ atlantiseof::analyze_scenario_pca(data_file = paste0(results_dir,'atlantis_EOF_s
                                   out_dir = results_dir,
                                   start_year = 30,
                                   stop_year = 60,
-                                  scenario_names = 'targeting',
+                                  scenario_names = 'all',
+                                  annual = T,
+                                  bin_width = 5
+                                  
+)
+
+
+atlantiseof::analyze_scenario_pca(data_file = paste0(results_dir,'atlantis_EOF_scenario_data_pruned.rds'),
+                                  out_dir = results_dir,
+                                  start_year = 30,
+                                  stop_year = 60,
+                                  scenario_names = 'all',
                                   annual = F
                                   
 )

@@ -1,41 +1,54 @@
 Variable.Category,Variable.Role,Variable,LongName,Used
-system_productivity,biomass,bio.tot,Total Biomass,1
-system_productivity,biomass,prop.bio.pelagic,Pelagic Biomass Proportion,1
-system_productivity,biomass,prop.bio.predator,Predator Biomass Proportion,1
-system_productivity,production,small.large.ratio.anom.mean,Small Fish to Large Fish Productivity Anomaly,1
-management,stock_status,prop.of,Proportion Overfished,1
-management,socioeconomics,catch.tot,Total Catch,1
-management,fishery_behavior,mean.tl.catch,Mean Trophic Level of Catch,1
-trophic_structure,energy_distribution,mean.tl.bio,Mean Trophic Level of Biomass,1
-trophic_structure,energy_distribution,bio_inf,Cumulative Biomass - Biomass Inflection,1
-trophic_structure,energy_distribution,tl_inf,Cumulative Biomass - Trophic Level Inflection,1
-trophic_structure,energy_efficiency,steep,Cumulative Biomass - steepness,1
+food_web,information_flow,ascendancy,Ascendancy,1
+food_web,stability,avg_jaccard_similarity_weighted,Jaccard Similarity,1
+food_web,stability,avg_jaccard_similarity,Jaccard Similarity,0
 trophic_structure,energy_efficiency,b1_param,Cumulative Biomass - Lower Slope,0
 trophic_structure,energy_efficiency,b2_param,Cumulative Biomass - Upper Slope,0
+system_productivity,biomass,bio.consumer,Consumer Biomass,1
+system_productivity,biomass,bio.tot,Total Biomass,1
+trophic_structure,energy_distribution,bio_inf,Cumulative Biomass - Biomass Inflection,1
+community_composition,spatial_distribution,biomass.spatial.gini.mean,Spatial Biomass Gini Index - Mean of Species,1
+community_composition,spatial_distribution,biomass.spatial.gini.tot,Spatial Biomass Gini Index - Aggregate Biomass,1
 trophic_structure,energy_efficiency,c_param,Cumulative Biomass - Lower Asymptote,0
+management,catch_composition,catch.entropy,Shannon Diversity of Catch,1
+food_web,information_flow,capacity,Capacity,1
+management,stock_status,catch.bio,Catch to Biomass Ratio,1
+management,socioeconomics,catch.tot,Total Catch,1
+food_web,information_flow,coherence,Coherence,1
+food_web,network_topology,connectance_weighted,Connectance - Weighted by Consumption,1
+food_web,network_topology,connectance,Connectance,0
 trophic_structure,energy_efficiency,d_param,Cumulative Biomass - Upper Asymptote,0
 trophic_structure,energy_efficiency,e_param,Cumulative Biomass - Halfway Between Asymptotes,0
-community_composition,multivariate_distance,JS_divergence,Jensen-Shannon Divergence,1
-community_composition,multivariate_distance,KL_divergence,Kullback-Leibler Divergence,0
 community_composition,multivariate_distance,Jeffreys_divergence,Jeffreys Divergence,0
-food_web,network_topology,connectance,Connectance,1
-food_web,network_topology,mean_in_degree,In Degree,1
-food_web,network_topology,mean_out_degree,Out Degree,1
-food_web,network_topology,modularity_undirected,Modularity - Undirected Graph,1
-food_web,network_topology,modularlity_directed,Modularity - Directed Graph,1
-food_web,network_topology,mean_betweenness,Betweenness,1
-food_web,network_topology,network_betweenness_centralization,Network Betweenness Centralization,1
-food_web,information_flow,ascendancy,Ascendancy,1
-food_web,information_flow,capacity,Capacity,1
-food_web,information_flow,overhead,Overhead,1
-food_web,information_flow,reactive_ascendancy,Reactive Ascendancy,1
-food_web,information_flow,rel_ascendancy,Relative Ascendancy,1
-food_web,information_flow,coherence,Coherence,1
-food_web,stability,redundancy_proxy,Redundancy,1
-food_web,stability,trophic_coherence,Trophic Coherence,1
-food_web,stability,avg_jaccard_similarity,Jaccard Similarity,1
-food_web,stability,resilience_eigenvalue,Resilience Eigenvalue,1
-food_web,keystoneness,keystone_spp_rti,Keystone - Relative total Impact,1
+community_composition,multivariate_distance,JS_divergence,Jensen-Shannon Divergence,1
 food_web,keystoneness,keystone_spp_ksi1,Keystone - Top Species 1,1
 food_web,keystoneness,keystone_spp_ksi2,Keystone - Top Species 2,1
 food_web,keystoneness,keystone_spp_ksi3,Keystone - Top Species 3,1
+food_web,keystoneness,keystone_spp_rti,Keystone - Relative total Impact,1
+community_composition,multivariate_distance,KL_divergence,Kullback-Leibler Divergence,0
+trophic_structure,energy_distribution,mean.tl.bio,Mean Trophic Level of Biomass,1
+management,fishery_behavior,mean.tl.catch,Mean Trophic Level of Catch,1
+food_web,network_topology,mean_betweenness_weighted,Betweenness - Weighted by Consumption,1
+food_web,network_topology,mean_betweenness,Betweenness,0
+food_web,network_topology,mean_eff_in_degree,In Degree - Weighted by Consumption,1
+food_web,network_topology,mean_eff_out_degree,Out Degree - Weighted by Consumption,1
+food_web,network_topology,mean_in_degree,In Degree,0
+food_web,network_topology,mean_out_degree,Out Degree,0
+food_web,network_topology,modularity_undirected,Modularity - Undirected Graph,1
+food_web,network_topology,modularity_directed,Modularity - Directed Graph,1
+food_web,network_topology,network_betweenness_centralization,Network Betweenness Centralization,1
+food_web,information_flow,overhead,Overhead,1
+system_productivity,biomass,prop.bio.pelagic,Pelagic Biomass Proportion,1
+system_productivity,biomass,prop.bio.predator,Predator Biomass Proportion,1
+management,stock_status,prop.of,Proportion Overfished,1
+food_web,information_flow,reactive_ascendancy,Reactive Ascendancy,1
+food_web,stability,redundancy_proxy_weighted,Redundancy - Weighted by Consumption,1
+food_web,stability,redundancy_proxy,Redundancy,0
+food_web,information_flow,rel_ascendancy,Relative Ascendancy,1
+food_web,stability,resilience_eigenvalue,Resilience Eigenvalue,1
+community_composition,size_spectrum,size.spectrum.intercept,Size Spectrum Intercept,1
+community_composition,size_spectrum,size.spectrum.r2,Size Spectrum R2,1
+community_composition,size_spectrum,size.spectrum.slope,Size Spectrum Slope,1
+system_productivity,production,small.large.ratio.anom.mean,Small Fish to Large Fish Productivity Anomaly,1
+trophic_structure,energy_efficiency,steep,Cumulative Biomass - steepness,1
+trophic_structure,energy_distribution,tl_inf,Cumulative Biomass - Trophic Level Inflection,1

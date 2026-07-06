@@ -12,6 +12,7 @@ make_scenario_dataset(
   targeting_setup_file,
   uniform_setup_file,
   ref_state_year_file,
+  def_file,
   out_dir
 )
 }
@@ -29,6 +30,8 @@ make_scenario_dataset(
 \item{uniform_setup_file}{Character. Path to the CSV file containing setup parameters for uniform runs.}
 
 \item{ref_state_year_file}{Character. Path to the RDS file containing the annual reference ecosystem state.}
+
+\item{def_file}{Character. Path to the CSV file containing indicator definitions (e.g., "data-raw/indicator_defs.csv").}
 
 \item{out_dir}{Character. Directory where the final processed dataset will be saved.}
 }
