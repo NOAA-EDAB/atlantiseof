@@ -14,7 +14,7 @@
 calculate_trophic_levels_corrected <- function(adj_matrix, basal_species) {
   
   # 1. Transpose the matrix so Rows = Predators, Columns = Prey
-  flow_mat <- t(adj_matrix)
+  flow_mat <- adj_matrix
   
   # 2. Normalize raw consumption flows into a Diet Composition (Proportion) matrix 'Q'
   row_totals <- rowSums(flow_mat, na.rm = TRUE)

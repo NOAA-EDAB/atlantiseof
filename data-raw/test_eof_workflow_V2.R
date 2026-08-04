@@ -99,7 +99,7 @@ atlantiseof::make_reference_state(
   param.dir, atl.dir, group.index, fgs.file, dietSource,timeRange =  20:60, out.name, desired.p, survdat.data = survdat.data
 )
 
-targeting_run_prefix = 'eof_targeting_4'
+rentargeting_run_prefix = 'eof_targeting_4'
 uniform_run_prefix = 'catch_thresholds_eof_uniform_standard_2'
 atlantiseof::make_scenario_dataset(targeting_run_prefix = targeting_run_prefix,
                                    uniform_run_prefix = uniform_run_prefix,
