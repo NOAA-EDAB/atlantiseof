@@ -5,12 +5,12 @@
 # Base root paths (Update these when changing machines/drives)
 github_root   <- "Z:/atlantiseof/currentVersion/"
 atl_root      <- "C:/Users/joseph.caracappa/Documents/Data/base_run_eof/"
-run_data_root <- "E:/data/eof_targeting_3/" #"Z:/dropoff/Joseph.Caracappa/eof_targeting_1/analysis/"
-out_dir <- "E:/data/eof_targeting_3/analysis/"
+run_data_root <- "E:/data/eof_targeting_4/" #"Z:/dropoff/Joseph.Caracappa/eof_targeting_1/analysis/"
+out_dir <- "E:/data/eof_targeting_4/analysis/"
 results_dir = 'Z:/atlantiseof/data/'
 
 # Run specific parameters
-run.prefix <- "eof_targeting_3"
+run.prefix <- "eof_targeting_4"
 dietSource <- "detdiet"
 timeRange  <- 30:52
 out.name   <- "ref_"
@@ -99,14 +99,14 @@ atlantiseof::make_reference_state(
   param.dir, atl.dir, group.index, fgs.file, dietSource,timeRange =  20:60, out.name, desired.p, survdat.data = survdat.data
 )
 
-targeting_run_prefix = 'eof_targeting_3'
-uniform_run_prefix = 'catch_thresholds_eof_uniform_standard'
+targeting_run_prefix = 'eof_targeting_4'
+uniform_run_prefix = 'catch_thresholds_eof_uniform_standard_2'
 atlantiseof::make_scenario_dataset(targeting_run_prefix = targeting_run_prefix,
                                    uniform_run_prefix = uniform_run_prefix,
                                    targeting_run_root = paste0('E:/data/',targeting_run_prefix,'/'),  #paste0("Z:/dropoff/Joseph.Caracappa/",targeting_run_prefix,"/" ),
                                    uniform_run_root = paste0("Z:/dropoff/export/",uniform_run_prefix,"/" ),
-                                   uniform_setup_file = paste0('Z:/atlantiseof/',uniform_run_prefix,'_setup.csv'),
-                                   targeting_setup_file = paste0('Z:/dropoff/Joseph.Caracappa/',targeting_run_prefix,'/',targeting_run_prefix,'_setup.csv'),
+                                   uniform_setup_file = paste0('Z:/dropoff/export/',uniform_run_prefix,'_setup.csv'),
+                                   targeting_setup_file = paste0('Z:/dropoff/Joseph.Caracappa/',targeting_run_prefix,'_setup.csv'),
                                    ref_state_year_file = here::here("data-raw", "ref_eco_state_year.rds"),
                                    def_file = here::here('data-raw','indicator_defs.csv'),
                                    out_dir =results_dir )

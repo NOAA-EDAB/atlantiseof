@@ -1,5 +1,5 @@
-pruned_data_file =paste0(results_dir,'atlantis_EOF_scenario_data_pruned.rds')
-out_dir = results_dir
+# pruned_data_file =paste0(results_dir,'atlantis_EOF_scenario_data_pruned.rds')
+# out_dir = results_dir
 
 plot_scenario_metrics = function(pruned_data_file, out_dir){
   

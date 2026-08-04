@@ -51,14 +51,17 @@ make_scenario_dataset <- function(targeting_run_prefix,
   
   uniform_setup_df <- utils::read.csv(uniform_setup_file) |> 
     dplyr::rename('run.id' = dplyr::starts_with('run'),
-                  eof_threshold_mT = 'c')
+                  eof_threshold_mT = 'catch.threshold')
   
   # 3. Helper Function to pull run data ----
-  pull_run_data <- function(run_dir) {
+  pull_run_data <- function(run_dir,debug = F) {
     ind_file = list.files(run_dir, pattern = "eco_indicators_ts.rds", full.names = TRUE, recursive = T)
     # ind_file <- file.path(run_dir, "eco_indicators_ts.rds")
     
-    if (!file.exists(ind_file)) return(NULL)
+    if (!file.exists(ind_file)){
+      message(paste0(ind_file, ' is missing'))
+      return(NULL)
+    } 
     
     this_run_name <- basename(run_dir)
     this_run_id <- utils::tail(base::strsplit(this_run_name, split = "_")[[1]], 1)
@@ -66,12 +69,16 @@ make_scenario_dataset <- function(targeting_run_prefix,
     ind_data <- readRDS(ind_file) |>
       dplyr::mutate(run.id = this_run_id)
     
+    if(debug){
+      message(basename(run_dir),'done')
+    }
     return(ind_data)
+    
   }
   
   # 4. Process Targeting Data ----
   message("Processing targeting run data...")
-  targeting_data_ls <- pbapply::pblapply(targeting_run_dirs, pull_run_data, cl = num_cores) |>
+  targeting_data_ls <- pbapply::pblapply(targeting_run_dirs, pull_run_data, cl = num_cores, debug = T) |>
     dplyr::bind_rows()
   
   targeting_data_long <- targeting_data_ls |>
