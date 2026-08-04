@@ -14,11 +14,15 @@
 calculate_trophic_levels_corrected <- function(adj_matrix, basal_species) {
   
   # 1. Transpose the matrix so Rows = Predators, Columns = Prey
-  flow_mat <- adj_matrix
+  # This is required because the input adj_matrix has Rows = Prey, Cols = Predators[cite: 5].
+  flow_mat <- t(adj_matrix)
   
-  # 2. Normalize raw consumption flows into a Diet Composition (Proportion) matrix 'Q'
-  row_totals <- rowSums(flow_mat, na.rm = TRUE)
-  # Prevent division by zero for species that don't eat (e.g., basal species)
+  # 2. Calculate total consumption by each predator
+  # Since Rows = Predators, rowSums calculates total diet.
+  row_totals <- rowSums(flow_mat, na.rm = TRUE) 
+  
+  # 3. Normalize raw consumption flows into a Diet Composition (Proportion) matrix 'Q'
+  # Prevent division by zero for species that don't eat, and sweep across rows (MARGIN = 1)
   Q <- sweep(flow_mat, 1, ifelse(row_totals > 0, row_totals, 1), "/")
   
   # Initialize a vector for trophic levels with NAs
@@ -37,7 +41,7 @@ calculate_trophic_levels_corrected <- function(adj_matrix, basal_species) {
     sub_Q <- Q[non_basal_species, non_basal_species, drop = FALSE]
     
     # Create a vector 'e' that represents the proportional contribution from basal species
-    # e = Q[non_basal, basal] * TL[basal]
+    # Matrix math (Q %*% tl) now correctly multiplies predator diets by prey trophic levels
     e <- Q[non_basal_species, basal_species_in_matrix, drop = FALSE] %*% tl[basal_species_in_matrix]
     
     # Calculate the trophic levels for non-basal species using matrix inversion
@@ -54,31 +58,63 @@ calculate_trophic_levels_corrected <- function(adj_matrix, basal_species) {
 
 #'Coherence
 #'Function to calculate trophic coherence
-#'@param adj_matrix matrix. directed flow adjacency matrix of the food web with names
+#'@param adj_matrix matrix. directed flow adjacency matrix of the food web with names (Rows = Prey, Cols = Predators in mgN)
 #'@param trophic_levels numeric. named vector of trophic levels by species in the adj_matrix returned from calculate_trophic_levels_corrected()
+#'@param diet_threshold numeric. The minimum proportion of a predator's diet a prey must make up to be included in variance calculations (default 0.01)
 #'
 #'@returns numeric coherence value
 #'
 #'@export 
 #'
 
-calculate_coherence <- function(adj_matrix, trophic_levels) {
+calculate_coherence <- function(adj_matrix, trophic_levels, diet_threshold = 0.01) {
+  # 1. Filter out NA trophic levels (e.g., disconnected nodes)
   valid_tl <- trophic_levels[!is.na(trophic_levels)]
   if (length(valid_tl) == 0) return(NA)
+  
+  # 2. Subset the adjacency matrix to only include valid species
   adj_matrix_valid <- adj_matrix[names(valid_tl), names(valid_tl), drop = FALSE]
+  
+  # 3. Calculate the variance of all valid trophic levels in the network
   var_T <- var(valid_tl, na.rm = TRUE)
+  
+  # If there is no variance in the network's trophic levels, coherence is undefined
   if (is.na(var_T) || var_T == 0) return(NA)
+  
+  # 4. Calculate the dietary variance for each individual predator (iterating over columns)
   var_prey_T <- apply(adj_matrix_valid, 2, function(pred_col) {
-    prey_tl <- valid_tl[pred_col > 0]
-    if (length(prey_tl) > 0) {
+    
+    # Calculate the predator's total diet in absolute units (mgN)
+    total_diet <- sum(pred_col, na.rm = TRUE)
+    
+    # If the predator doesn't eat anything, its dietary variance is 0
+    if (total_diet == 0) return(0)
+    
+    # Convert raw mgN flows into diet proportions
+    diet_props <- pred_col / total_diet
+    
+    # Only keep prey that make up a meaningful proportion of the diet (e.g., > 1%)
+    # This filters out the microscopic trace flows that inflate variance
+    prey_tl <- valid_tl[diet_props > diet_threshold]
+    
+    # Calculate variance. A specialist (0 or 1 prey item) has 0 dietary variance.
+    if (length(prey_tl) > 1) {
       return(var(prey_tl, na.rm = TRUE))
     } else {
       return(0)
     }
   })
+  
+  # 5. Sum the individual predator variances
   sum_var_prey_T <- sum(var_prey_T, na.rm = TRUE)
+  
+  # 6. Calculate total number of valid species
   S <- length(valid_tl)
+  
+  # 7. Calculate final trophic coherence
   coherence <- 1 - (sum_var_prey_T / (S * var_T))
+  
+  # Bound the result between 0 and 1
   return(max(0, min(1, coherence)))
 }
 

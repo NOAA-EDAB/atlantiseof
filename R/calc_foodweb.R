@@ -19,7 +19,7 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
   
   # --- START: DATA LOADING SECTION ---
   fgs = read.csv(fgs.file) |> 
-    dplyr::select(Code, Name, LongName, GroupType)
+    dplyr::select(Code, Name, LongName, GroupType,NumCohorts)
   
   biomass.file = list.files(path = atl.dir, pattern = 'biomass_age.rds', full.names = T, recursive = T)
   biomass.invert.file = list.files(path = atl.dir, pattern = 'biomass_age_invert.rds', full.names = T, recursive = T)
@@ -68,6 +68,9 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
   
   diet.prop = atlantiseof::get_diet_prop(param.dir,atl.dir,fgs = fgs.file, dietFile = dietFile,dietSource  = dietSource)
   
+  # 1. Identify which species have age structure
+  age_structured_species <- fgs$Name[fgs$NumCohorts > 1]
+  
   if(any(grepl('agecl', colnames(diet.prop)))){
     food_web_df = diet.prop |> 
       dplyr::left_join(age.mat, by = c('pred' = 'Name')) |> 
@@ -80,10 +83,19 @@ calc_foodweb = function(atl.dir,fgs.file,param.dir, dietSource,timeRange, show.p
     print('no predator age classes provided. all predators considered adults')
   }
   
+  # 2. Conditionally append suffixes
   food_web_df <- food_web_df |> 
-    dplyr::mutate(predator_node = paste(pred, pred.stage, sep = "_"),
-                  prey_node = paste0(prey,'_adult')) |> 
-    dplyr::group_by(time,predator_node,prey_node) |> 
+    dplyr::mutate(
+      # Only append stage to predator if it has cohorts
+      predator_node = ifelse(pred %in% age_structured_species, 
+                             paste(pred, pred.stage, sep = "_"), 
+                             pred),
+      # Only append 'adult' to prey if it has cohorts (assuming we only track adult prey for now based on your old logic, adjust if needed)
+      prey_node = ifelse(prey %in% age_structured_species, 
+                         paste0(prey, '_adult'), 
+                         prey)
+    ) |> 
+    dplyr::group_by(time,predator_node,prey_node) |>
     dplyr::summarise(consumption = sum(consumption,na.rm=T), .groups = 'drop') |> 
     dplyr::group_by(time, predator_node) |> 
     dplyr::mutate(consumption.total = sum(consumption,na.rm=T)) |> 
